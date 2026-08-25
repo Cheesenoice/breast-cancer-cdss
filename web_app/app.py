@@ -33,7 +33,7 @@ from wsi_utils import load_patient_patches, get_attention_border_color, get_avai
 # =========================================================================
 st.set_page_config(
     page_title="Multimodal AI CDSS - TCGA-BRCA",
-    page_icon="🧬",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -45,7 +45,7 @@ st.markdown(get_custom_css(), unsafe_allow_html=True)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Load Cached Resources
-with st.spinner("⏳ Đang tải mô hình Trí Tuệ Nhân Tạo & Dữ Liệu Lâm Sàng..."):
+with st.spinner("Đang tải mô hình Trí Tuệ Nhân Tạo & Dữ Liệu Lâm Sàng..."):
     models = load_models_and_scalers(BASE_DIR)
     data = load_cohort_data(BASE_DIR)
 
@@ -64,16 +64,16 @@ df_tsne = data['tsne']
 with st.sidebar:
     st.markdown("""
     <div style='text-align:center; padding-bottom: 10px;'>
-        <h2 style='margin:0; color:#0284c7;'>🏥 CDSS TCGA-BRCA</h2>
+        <h2 style='margin:0; color:#0284c7;'>CDSS TCGA-BRCA</h2>
         <span style='font-size:12px; color:#64748b; font-weight:600;'>HỆ THỐNG HỖ TRỢ QUYẾT ĐỊNH Y KHOA</span>
     </div>
     """, unsafe_allow_html=True)
     st.divider()
 
-    st.markdown("### 👤 Chọn Hồ Sơ Bệnh Nhân")
+    st.markdown("### Chọn Hồ Sơ Bệnh Nhân")
     selection_mode = st.radio(
         "Chế độ nạp dữ liệu:",
-        ["🏆 12 Ca Bệnh Chuẩn Vàng (Demo 100%)", "🌐 Toàn Bộ Quần Thể (882 Ca Cohort)"],
+        ["12 Ca Bệnh Chuẩn Vàng (Demo 100%)", "Toàn Bộ Quần Thể (882 Ca Cohort)"],
         index=0
     )
 
@@ -153,7 +153,7 @@ with st.sidebar:
     
     st.markdown("""
     <div style='background:#f8fafc; padding:12px; border-radius:10px; border:1px solid #e2e8f0; font-size:11px; color:#64748b;'>
-        ℹ️ <b>Mô hình kích hoạt:</b><br>
+        <b>Mô hình kích hoạt:</b><br>
         • TransMIL Nystrom Attention (512D)<br>
         • Genomics MLP Z-Score (512D)<br>
         • Siêu Vector Nối Tầng (1024D)<br>
@@ -196,7 +196,7 @@ st.markdown("""
 <div class='cdss-header'>
     <div style='display:flex; justify-content:space-between; align-items:center;'>
         <div>
-            <h1 class='cdss-title'>🧬 HỆ THỐNG HỖ TRỢ QUYẾT ĐỊNH LÂM SÀNG ĐA PHƯƠNG THỨC (MULTIMODAL CDSS)</h1>
+            <h1 class='cdss-title'>HỆ THỐNG HỖ TRỢ QUYẾT ĐỊNH LÂM SÀNG ĐA PHƯƠNG THỨC (MULTIMODAL CDSS)</h1>
             <div class='cdss-subtitle'>Phân loại phân tử PAM50 & Tiên lượng sống còn cá thể hóa trên dữ liệu ung thư vú TCGA-BRCA (WSI Gigapixel + 500 RNA-Seq)</div>
         </div>
         <div>
@@ -211,25 +211,25 @@ st.markdown("""
 # 5. TAB NAVIGATION (7 COMPREHENSIVE CLINICAL MODULES)
 # =========================================================================
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "🧠 Hội Chẩn Đa Phương Thức",
-    "🔬 Mô Bệnh Học WSI & Mosaic",
-    "🧬 Giải Mã Hộp Đen XAI",
-    "⏳ Tiên Lượng Sinh Tồn Sâu",
-    "🗺️ Bản Đồ Quần Thể 2D t-SNE",
-    "💊 Mô Phỏng Điều Trị Sinh Học",
-    "📊 Đối So Sánh 12 Mô Hình"
+    "Hội Chẩn Đa Phương Thức",
+    "Mô Bệnh Học WSI & Mosaic",
+    "Giải Mã Hộp Đen XAI",
+    "Tiên Lượng Sinh Tồn Sâu",
+    "Bản Đồ Quần Thể 2D t-SNE",
+    "Mô Phỏng Điều Trị Sinh Học",
+    "Đối So Sánh 12 Mô Hình"
 ])
 
 
 # -------------------------------------------------------------------------
 with tab1:
-    st.markdown("### 🧠 Kết Quả Hội Chẩn Phân Loại Phân Tử PAM50")
+    st.markdown("### Kết Quả Hội Chẩn Phân Loại Phân Tử PAM50")
     
     # --- HUMAN-IN-THE-LOOP CLINICAL THRESHOLD CONTROLLER ---
     st.markdown("""
     <div style='background:#f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 18px;'>
         <div style='font-size:13px; font-weight:700; color:#0f172a; margin-bottom:8px;'>
-            🎛️ Bảng Tinh Chỉnh Ngưỡng Quyết Định Y Khoa (Human-in-the-Loop Clinical Control)
+            Bảng Tinh Chỉnh Ngưỡng Quyết Định Y Khoa (Human-in-the-Loop Clinical Control)
         </div>
         <div style='font-size:12px; color:#64748b; margin-bottom:10px;'>
             Cho phép Bác sĩ kiểm soát mức độ khắt khe của AI: Tinh chỉnh ngưỡng an toàn hoặc tăng độ nhạy phát hiện sớm các phân nhóm ác tính hiếm gặp (HER2 / Basal).
@@ -248,20 +248,20 @@ with tab1:
         st.write("")
         st.write("")
         boost_rare = st.checkbox(
-            "⚡ Ưu tiên Bắt Ca Ác Tính Hiếm (HER2 / Basal)",
+            "Ưu tiên Bắt Ca Ác Tính Hiếm (HER2 / Basal)",
             value=False,
             help="Kích hoạt báo động sớm nếu phát hiện tín hiệu thể ác tính cao (HER2/Basal) đạt từ 25% trở lên."
         )
 
     # Check Human-in-the-loop status
     if boost_rare and (probs['HER2-enriched'] >= 0.25 or probs['Basal-like'] >= 0.25) and pred_subtype not in ['HER2-enriched', 'Basal-like']:
-        alert_rare_msg = f"🚨 <b>CẢNH BÁO PHÁT HIỆN SỚM MẦM MỐNG ÁC TÍNH (Early Malignancy Alert):</b> Chế độ Tăng độ nhạy phát hiện tín hiệu phân tử thể ác tính (HER2: {probs['HER2-enriched']*100:.1f}% | Basal: {probs['Basal-like']*100:.1f}%). Khuyến cáo Bác sĩ chỉ định thêm xét nghiệm Hóa mô miễn dịch (IHC) hoặc lai tại chỗ huỳnh quang (FISH) để tránh bỏ sót."
+        alert_rare_msg = f"<b>CẢNH BÁO PHÁT HIỆN SỚM MẦM MỐNG ÁC TÍNH (Early Malignancy Alert):</b> Chế độ Tăng độ nhạy phát hiện tín hiệu phân tử thể ác tính (HER2: {probs['HER2-enriched']*100:.1f}% | Basal: {probs['Basal-like']*100:.1f}%). Khuyến cáo Bác sĩ chỉ định thêm xét nghiệm Hóa mô miễn dịch (IHC) hoặc lai tại chỗ huỳnh quang (FISH) để tránh bỏ sót."
         st.markdown(f"<div class='diag-box diag-box-danger' style='margin-bottom:15px;'>{alert_rare_msg}</div>", unsafe_allow_html=True)
     elif confidence * 100 < cf_threshold:
-        alert_cf_msg = f"⚠️ <b>CẢNH BÁO ĐỘ BẤT ĐỊNH CAO (High Uncertainty - Borderline Case):</b> Độ tự tin của AI ({confidence*100:.1f}%) thấp hơn Ngưỡng an toàn Bác sĩ yêu cầu ({cf_threshold}%). Khuyến nghị chuyển hội chẩn liên khoa hoặc chỉ định sinh thiết kiểm chứng."
+        alert_cf_msg = f"<b>CẢNH BÁO ĐỘ BẤT ĐỊNH CAO (High Uncertainty - Borderline Case):</b> Độ tự tin của AI ({confidence*100:.1f}%) thấp hơn Ngưỡng an toàn Bác sĩ yêu cầu ({cf_threshold}%). Khuyến nghị chuyển hội chẩn liên khoa hoặc chỉ định sinh thiết kiểm chứng."
         st.markdown(f"<div class='diag-box diag-box-warning' style='margin-bottom:15px;'>{alert_cf_msg}</div>", unsafe_allow_html=True)
     else:
-        alert_cf_msg = f"✅ <b>KẾT QUẢ ĐẠT CHUẨN AN TOÀN LÂM SÀNG (Clinically Confirmed):</b> Độ tự tin ({confidence*100:.1f}%) vượt mức tin cậy yêu cầu ({cf_threshold}%). Phù hợp tiến hành lập kế hoạch điều trị."
+        alert_cf_msg = f"<b>KẾT QUẢ ĐẠT CHUẨN AN TOÀN LÂM SÀNG (Clinically Confirmed):</b> Độ tự tin ({confidence*100:.1f}%) vượt mức tin cậy yêu cầu ({cf_threshold}%). Phù hợp tiến hành lập kế hoạch điều trị."
         st.markdown(f"<div class='diag-box diag-box-success' style='margin-bottom:15px;'>{alert_cf_msg}</div>", unsafe_allow_html=True)
 
     col_diag_left, col_diag_right = st.columns([1.2, 1])
@@ -299,7 +299,7 @@ with tab1:
         """, unsafe_allow_html=True)
         
         # 4-Class Probability Distribution Bars
-        st.markdown("#### 📊 Phân Phối Xác Suất 4 Phân Nhóm:")
+        st.markdown("#### Phân Phối Xác Suất 4 Phân Nhóm:")
         for st_name, p_val in probs.items():
             col_bar_lbl, col_bar_prog = st.columns([1, 2.5])
             with col_bar_lbl:
@@ -361,13 +361,13 @@ with tab1:
 # TAB 2: HISTOPATHOLOGICAL WSI MOSAIC & ATTENTION HEATMAP
 # -------------------------------------------------------------------------
 with tab2:
-    st.markdown("### 🔬 Trực Quan Hóa Mô Bệnh Học & Khâu Ghép Thảm Ảnh Mosaic")
+    st.markdown("### Trực Quan Hóa Mô Bệnh Học & Khâu Ghép Thảm Ảnh Mosaic")
     st.markdown("""
     Hệ thống trích xuất **30 mảnh mô vi thể thật (Patches $256\\times 256$)** của bệnh nhân. 
     Mạng TransMIL sử dụng cơ chế **Attention Pooling** để gán trọng số chú ý cho từng mảnh mô bệnh học:
-    - 🔴 **Viền Đỏ (Attention Cao):** Vùng tế bào u ác tính cao, biến dạng nhân tế bào mạnh nhất.
-    - 🟠 **Viền Cam / 🟡 Vàng:** Vùng xâm lấn trung bình và vùng ranh giới mô u.
-    - 🟢 **Viền Xanh (Attention Thấp):** Vùng mô đệm, mô mỡ hoặc chất nền liên kết bình thường.
+    -  **Viền Đỏ (Attention Cao):** Vùng tế bào u ác tính cao, biến dạng nhân tế bào mạnh nhất.
+    -  **Viền Cam /  Vàng:** Vùng xâm lấn trung bình và vùng ranh giới mô u.
+    -  **Viền Xanh (Attention Thấp):** Vùng mô đệm, mô mỡ hoặc chất nền liên kết bình thường.
     """)
     
     # Load 24 patches for the grid
@@ -401,11 +401,11 @@ with tab2:
     st.divider()
     
     # SVS Slide Viewer & Uploader Mode
-    st.markdown("#### 🔬 Trình Xem & Tải Lên Tiêu Bản Toàn Cảnh Gốc (Whole Slide SVS Interactive Studio)")
+    st.markdown("#### Trình Xem & Tải Lên Tiêu Bản Toàn Cảnh Gốc (Whole Slide SVS Interactive Studio)")
     
     # 1. SVS File Uploader
     uploaded_svs_file = st.file_uploader(
-        "📤 Tải Lên Tiêu Bản Toàn Cảnh Mới (.svs / .tif / .tiff / .png / .jpg):",
+        "Tải Lên Tiêu Bản Toàn Cảnh Mới (.svs / .tif / .tiff / .png / .jpg):",
         type=['svs', 'tif', 'tiff', 'png', 'jpg', 'jpeg'],
         help="Bạn có thể tải lên file tiêu bản SVS thật của bệnh nhân mới hoặc ảnh vi thể để hệ thống đọc metadata và trực quan hóa."
     )
@@ -416,7 +416,7 @@ with tab2:
         save_path = os.path.join(upload_dir, uploaded_svs_file.name)
         with open(save_path, 'wb') as f:
             f.write(uploaded_svs_file.getbuffer())
-        st.success(f"✅ Đã tải lên và nạp thành công tiêu bản: **{uploaded_svs_file.name}** ({uploaded_svs_file.size / (1024*1024):.2f} MB)")
+        st.success(f"Đã tải lên và nạp thành công tiêu bản: **{uploaded_svs_file.name}** ({uploaded_svs_file.size / (1024*1024):.2f} MB)")
         
     svs_slides = get_available_svs_slides(BASE_DIR)
     
@@ -435,7 +435,7 @@ with tab2:
             
             st.markdown(f"""
             <div class='patient-card' style='padding:14px; margin-top:8px;'>
-                <div style='font-size:12px; font-weight:700; color:#0f172a; margin-bottom:6px;'>📑 THÔNG SỐ TIÊU BẢN GỐC:</div>
+                <div style='font-size:12px; font-weight:700; color:#0f172a; margin-bottom:6px;'>THÔNG SỐ TIÊU BẢN GỐC:</div>
                 <div style='font-size:11px; color:#475569; line-height:1.6;'>
                     • <b>Tệp tin:</b> <code>{matched_svs['filename']}</code><br>
                     • <b>Dung lượng:</b> <b>{matched_svs['size_mb']:.2f} MB</b><br>
@@ -475,7 +475,7 @@ with tab2:
 # TAB 3: EXPLAINABLE AI (XAI) & BIOMARKER RADAR CHART
 # -------------------------------------------------------------------------
 with tab3:
-    st.markdown("### 🧬 Giải Mã Quyết Định AI (Explainable AI - Integrated Gradients)")
+    st.markdown("### Giải Mã Quyết Định AI (Explainable AI - Integrated Gradients)")
     st.markdown("""
     Sử dụng thuật toán **Tích Phân Gradient (Integrated Gradients)** để giải phẫu tư duy của mạng Học sâu.
     Thuật toán tính toán đạo hàm ngược từ xác suất phân nhóm PAM50 dự đoán về từng biểu hiện gen gốc để xác định **Top 15 Gen Hung Thủ**.
@@ -484,7 +484,7 @@ with tab3:
     col_xai_left, col_xai_right = st.columns([1.2, 1])
     
     with col_xai_left:
-        with st.spinner("⏳ Đang tính toán ma trận đạo hàm Integrated Gradients..."):
+        with st.spinner("Đang tính toán ma trận đạo hàm Integrated Gradients..."):
             xai_res = compute_gene_integrated_gradients(
                 models['transmil'],
                 pt_file,
@@ -497,12 +497,12 @@ with tab3:
             
     with col_xai_right:
         # Biomarker Radar Chart
-        st.markdown("#### 🕸️ Phân Tích Đột Biến Gen Chỉ Dấu:")
+        st.markdown("#### Phân Tích Đột Biến Gen Chỉ Dấu:")
         fig_radar = create_biomarker_radar_chart(gen_series, gene_stats)
         st.plotly_chart(fig_radar, use_container_width=True)
 
     # Biological Accordance Commentary
-    st.markdown("#### 💡 Nhận Định Y Lý Sinh Học Phân Tử (Molecular Validation):")
+    st.markdown("#### Nhận Định Y Lý Sinh Học Phân Tử (Molecular Validation):")
     st.markdown(f"""
     - **Sự biểu hiện gen chính:** Bệnh nhân hiện tại có biểu hiện gen **{xai_res['top_genes'][-1]}** đạt điểm đóng góp cao nhất (**+{xai_res['top_scores'][-1]:.4f}**), hoàn toàn phù hợp với cơ chế bệnh sinh của thể **{pred_subtype}**.
     - **Độ tin cậy y khoa:** Các gen chỉ dấu lâm sàng trọng yếu (như ERBB2, ESR1, PGR, MKI67) trên biểu đồ mạng nhện phản ánh đúng bản chất hóa mô miễn dịch (IHC), đập tan hoàn toàn lo ngại về "Hộp đen AI".
@@ -513,7 +513,7 @@ with tab3:
 # TAB 4: DEEP SURVIVAL ANALYSIS & KAPLAN-MEIER
 # -------------------------------------------------------------------------
 with tab4:
-    st.markdown("### ⏳ Tiên Lượng Sống Còn Sâu & Đường Cong Kaplan-Meier 5 Năm")
+    st.markdown("### Tiên Lượng Sống Còn Sâu & Đường Cong Kaplan-Meier 5 Năm")
     st.markdown("""
     Mạng AI trích xuất **Siêu Vector Đa Phương Thức 1024D** kết hợp giữa hình thái tế bào vi thể và hồ sơ 500 gen, nén qua không gian **PCA 16 thành phần** và nạp vào mô hình **Hồi quy CoxPH** để đưa ra dự báo sống còn cá thể hóa.
     """)
@@ -537,7 +537,7 @@ with tab4:
         
         st.markdown(f"""
         <div class='patient-card' style='padding:15px;'>
-            <div style='font-size:13px; font-weight:700; color:#0f172a; margin-bottom:10px;'>📊 Xác Suất Sống Còn Tích Lũy Dự Báo:</div>
+            <div style='font-size:13px; font-weight:700; color:#0f172a; margin-bottom:10px;'>Xác Suất Sống Còn Tích Lũy Dự Báo:</div>
             <div style='display:flex; justify-content:space-between; margin-bottom:8px;'>
                 <span style='color:#64748b;'>• Mốc 1 Năm (12 Tháng):</span>
                 <span style='font-weight:700; color:#0f172a;'>{surv_res['surv_1yr']:.1f}%</span>
@@ -561,7 +561,7 @@ with tab4:
 # TAB 5: 2D T-SNE COHORT CLUSTERING MAP
 # -------------------------------------------------------------------------
 with tab5:
-    st.markdown("### 🗺️ Bản Đồ Không Gian Quần Thể 2D t-SNE (Cohort Cluster Locator)")
+    st.markdown("### Bản Đồ Không Gian Quần Thể 2D t-SNE (Cohort Cluster Locator)")
     st.markdown("""
     Định vị vị trí của bệnh nhân hiện tại giữa **882 bệnh nhân** trong toàn bộ cơ sở dữ liệu TCGA-BRCA trên không gian đặc trưng đa phương thức 1024D (đã giải nén bằng t-SNE 2D).
     """)
@@ -593,9 +593,9 @@ with tab5:
             x=[pt_x],
             y=[pt_y],
             mode='markers+text',
-            marker=dict(size=18, color='#facc15', symbol='star', line=dict(color='#0f172a', width=2)),
+            marker=dict(size=18, color='#facc15', symbol='diamond', line=dict(color='#0f172a', width=2)),
             name=f'Bệnh Nhân Hiện Tại ({selected_pid})',
-            text=[f'⭐ {selected_pid}'],
+            text=[f'[{selected_pid}]'],
             textposition='top center',
             textfont=dict(size=12, color='#0f172a', weight='bold')
         ))
@@ -614,7 +614,7 @@ with tab5:
 # TAB 6: DIGITAL TWIN TREATMENT SIMULATOR
 # -------------------------------------------------------------------------
 with tab6:
-    st.markdown("### 💊 Mô Phỏng Điều Trị Sinh Học Cá Thể Hóa (Digital Twin Treatment Simulation)")
+    st.markdown("### Mô Phỏng Điều Trị Sinh Học Cá Thể Hóa (Digital Twin Treatment Simulation)")
     st.markdown("""
     Công cụ **Bản Sao Kỹ Thuật Số (Digital Twin)** cho phép Bác sĩ thử nghiệm các phác đồ điều trị khác nhau trên mô hình AI để quan sát sự suy giảm chỉ số nguy cơ và sự dịch chuyển cải thiện của đường cong sinh tồn.
     """)
@@ -622,12 +622,12 @@ with tab6:
     col_sim_ctrl, col_sim_view = st.columns([1, 1.8])
     
     with col_sim_ctrl:
-        st.markdown("#### 🧪 Lựa Chọn Phác Đồ Can Thiệp:")
-        tx_chemo = st.checkbox("💉 Hóa Trị Liệu Phối Hợp (AC-T: Doxorubicin + Paclitaxel)", value=True if pred_subtype in ['Basal-like', 'Luminal B'] else False)
-        tx_endo = st.checkbox("💊 Liệu Pháp Nội Tiết (Tamoxifen / Aromatase Inhibitors)", value=True if 'Luminal' in pred_subtype else False)
-        tx_her2 = st.checkbox("🎯 Thuốc Kháng Thể Đích (Trastuzumab / Herceptin + Pertuzumab)", value=True if pred_subtype == 'HER2-enriched' else False)
-        tx_cdk46 = st.checkbox("🔬 Thuốc Ức Chế CDK4/6 (Palbociclib / Ribociclib)", value=False)
-        tx_immuno = st.checkbox("🛡️ Liệu Pháp Miễn Dịch (Pembrolizumab / Anti-PD-L1)", value=True if pred_subtype == 'Basal-like' else False)
+        st.markdown("#### Lựa Chọn Phác Đồ Can Thiệp:")
+        tx_chemo = st.checkbox("Hóa Trị Liệu Phối Hợp (AC-T: Doxorubicin + Paclitaxel)", value=True if pred_subtype in ['Basal-like', 'Luminal B'] else False)
+        tx_endo = st.checkbox("Liệu Pháp Nội Tiết (Tamoxifen / Aromatase Inhibitors)", value=True if 'Luminal' in pred_subtype else False)
+        tx_her2 = st.checkbox("Thuốc Kháng Thể Đích (Trastuzumab / Herceptin + Pertuzumab)", value=True if pred_subtype == 'HER2-enriched' else False)
+        tx_cdk46 = st.checkbox("Thuốc Ức Chế CDK4/6 (Palbociclib / Ribociclib)", value=False)
+        tx_immuno = st.checkbox("Liệu Pháp Miễn Dịch (Pembrolizumab / Anti-PD-L1)", value=True if pred_subtype == 'Basal-like' else False)
         
         # Calculate simulated hazard reduction
         benefit_factor = 0.0
@@ -683,7 +683,7 @@ with tab6:
 # TAB 7: BENCHMARK COMPARISON TABLE (12 MODELS)
 # -------------------------------------------------------------------------
 with tab7:
-    st.markdown("### 📊 Bảng Đối So Sánh Toàn Diện 12 Mô Hình & Đánh Giá Thực Nghiệm")
+    st.markdown("### Bảng Đối So Sánh Toàn Diện 12 Mô Hình & Đánh Giá Thực Nghiệm")
     st.markdown("""
     Tổng hợp kết quả kiểm thử **5-Fold Stratified Cross-Validation** của 12 mô hình trên toàn bộ dữ liệu đa phương thức TCGA-BRCA:
     """)
@@ -706,4 +706,4 @@ with tab7:
     df_bm = pd.DataFrame(benchmark_data)
     st.dataframe(df_bm, use_container_width=True, hide_index=True)
     
-    st.success("🏆 **Kết Luận Đề Tài:** Mô hình Siêu Đa Phương Thức **TransMIL God Mode (WSI + 500 Gen)** đạt độ chính xác cao nhất ($86.51\\%$, Macro-F1: $85.56\\%$, ROC-AUC: $0.9710$), vượt trội hoàn toàn so với tất cả các mô hình đơn phương thức truyền thống và CNN.")
+    st.success("**Kết Luận Đề Tài:** Mô hình Siêu Đa Phương Thức **TransMIL God Mode (WSI + 500 Gen)** đạt độ chính xác cao nhất ($86.51\\%$, Macro-F1: $85.56\\%$, ROC-AUC: $0.9710$), vượt trội hoàn toàn so với tất cả các mô hình đơn phương thức truyền thống và CNN.")
