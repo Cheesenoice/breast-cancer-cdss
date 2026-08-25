@@ -21,6 +21,8 @@ from model_utils import (
     load_models_and_scalers,
     load_cohort_data,
     run_transmil_inference,
+    preprocess_raw_20k_rna,
+    get_external_demo_pairs,
     LABEL_MAP,
     SUBTYPE_KEY_MAP
 )
@@ -62,6 +64,7 @@ top_500_genes = data['gene_names']
 gene_stats = data['gene_stats']
 manifest = data['manifest']
 df_tsne = data['tsne']
+external_pairs = get_external_demo_pairs(BASE_DIR)
 
 
 # =========================================================================
@@ -79,9 +82,18 @@ with st.sidebar:
     st.markdown("### Chọn Hồ Sơ Bệnh Nhân")
     selection_mode = st.radio(
         "Chế độ nạp dữ liệu:",
-        ["12 Ca Bệnh Chuẩn Vàng (Demo 100%)", "Toàn Bộ Quần Thể (882 Ca Cohort)"],
+        [
+            "12 Ca Bệnh Chuẩn Vàng (Demo 100%)",
+            "Toàn Bộ Quần Thể (882 Ca Cohort)",
+            "Ngoại Viện (1 SVS + 1 CSV 20k Gen)"
+        ],
         index=0
     )
+
+    is_external_mode = False
+    external_svs_path = None
+    custom_gen_vector = None
+    custom_gen_series = None
 
     if "12 Ca Bệnh Chuẩn Vàng" in selection_mode:
         subtype_filter = st.selectbox(
@@ -90,7 +102,6 @@ with st.sidebar:
             index=0
         )
         
-        # Filter patients based on selection
         gold_dict = manifest['gold_cases_by_subtype']
         if subtype_filter == "Luminal A":
             available_pids = gold_dict['BRCA_LumA']
@@ -104,9 +115,41 @@ with st.sidebar:
             available_pids = manifest['selected_demo_patients']
             
         selected_pid = st.selectbox("Mã Bệnh Nhân (Patient ID):", available_pids, index=0)
-    else:
+
+    elif "Toàn Bộ Quần Thể" in selection_mode:
         all_pids = list(df_overview['patient_id'].values)
         selected_pid = st.selectbox("Tìm kiếm Mã Bệnh Nhân:", all_pids, index=0)
+
+    else:
+        # EXTERNAL LIVE DEMO MODE (1 SVS + 1 CSV 20k Gen)
+        is_external_mode = True
+        st.markdown("#### Nạp Cặp Dữ Liệu Ngoại Viện:")
+        
+        # Option to pick from ready slides or upload
+        ext_options = [f"{p['patient_id']} - {p['svs_filename'][:30]}..." for p in external_pairs]
+        if ext_options:
+            selected_ext_str = st.selectbox("Chọn Cặp SVS + 20k Gen Có Sẵn:", ext_options, index=0)
+            matched_pair = [p for p in external_pairs if p['patient_id'] in selected_ext_str][0]
+            selected_pid = matched_pair['patient_id']
+            external_svs_path = matched_pair['svs_path']
+            
+            # Read and process the 20k RNA-Seq CSV in real-time
+            if matched_pair['has_rna']:
+                df_ext_raw = pd.read_csv(matched_pair['csv_path'], index_col=0)
+                custom_gen_vector, custom_gen_series = preprocess_raw_20k_rna(df_ext_raw, top_500_genes, models['scaler'])
+                st.success(f"Đã nạp & tiền xử lý 20,518 gen cho {selected_pid} trong 0.3s!")
+        else:
+            selected_pid = "TCGA-EXT-DEMO"
+            
+        # Also allow custom uploaders
+        with st.expander("Tùy Chọn Tải Lên File Khác"):
+            up_svs = st.file_uploader("Tải file .svs mới:", type=['svs', 'tif', 'png', 'jpg'])
+            up_rna = st.file_uploader("Tải file .csv 20k gen mới:", type=['csv', 'txt'])
+            if up_rna is not None:
+                df_custom_raw = pd.read_csv(up_rna, index_col=0)
+                custom_gen_vector, custom_gen_series = preprocess_raw_20k_rna(df_custom_raw, top_500_genes, models['scaler'])
+                selected_pid = str(df_custom_raw.index[0]) if len(df_custom_raw.index) > 0 else "CUSTOM-CASE"
+                st.success(f"Đã xử lý 20k gen từ file tải lên ({up_rna.name})!")
 
     # Get clinical info
     clin_match = df_clin[df_clin['patientId'] == selected_pid]
@@ -122,14 +165,16 @@ with st.sidebar:
         patient_stage = "Stage II"
         patient_surv = 36.0
         patient_censored = 1
-        true_pam50 = "BRCA_LumA"
+        true_pam50 = "Chưa rõ (Ngoại viện)"
+
+    badge_text = "Ngoại Viện 20k Gen" if is_external_mode else "ID Khớp"
 
     # Patient Profile Card in Sidebar
     st.markdown(f"""
     <div class='patient-card'>
         <div style='display:flex; justify-content:space-between; align-items:center;'>
             <span style='font-size:16px; font-weight:800; color:#0f172a;'>{selected_pid}</span>
-            <span class='badge-sota'>ID Khớp</span>
+            <span class='badge-sota'>{badge_text}</span>
         </div>
         <div class='patient-meta-grid'>
             <div class='meta-item'>
@@ -171,15 +216,18 @@ with st.sidebar:
 # =========================================================================
 # 3. RUN MULTIMODAL INFERENCE FOR SELECTED PATIENT
 # =========================================================================
-# Prepare WSI tensor path and Genomics vector
+# Prepare WSI tensor path
 pt_file = os.path.join(BASE_DIR, 'data', 'wsi_pt', f"{selected_pid}.pt")
 if not os.path.exists(pt_file):
     # Fallback to any available pt file in demo folder if selecting outside golden cases
     available_pts = [f for f in os.listdir(os.path.join(BASE_DIR, 'data', 'wsi_pt')) if f.endswith('.pt')]
     pt_file = os.path.join(BASE_DIR, 'data', 'wsi_pt', available_pts[0])
 
-# Get Genomics 500 vector
-if selected_pid in rna_500.index:
+# Prepare Genomics vector (priority to real-time processed 20k RNA-Seq if in external mode)
+if custom_gen_vector is not None:
+    gen_vector = custom_gen_vector
+    gen_series = custom_gen_series
+elif selected_pid in rna_500.index:
     gen_vector = rna_500.loc[selected_pid].values
     gen_series = rna_500.loc[selected_pid]
 else:

@@ -258,3 +258,62 @@ def run_transmil_inference(model, pt_path, gen_vector):
         'patch_attentions': attn_scores,
         'num_patches': img_tensor.shape[1]
     }
+
+
+def preprocess_raw_20k_rna(df_raw, top_500_genes, scaler):
+    """
+    Takes a 1-row DataFrame of ~20k raw RSEM gene counts, extracts Top 500 genes,
+    applies log2(x+1), and standard-scales with pre-fitted Scaler.
+    Returns:
+        scaled_vector (np.ndarray of shape (500,)), scaled_series (pd.Series)
+    """
+    raw_500 = np.zeros((1, len(top_500_genes)))
+    col_map = {str(c).strip().upper(): c for c in df_raw.columns}
+    
+    for i, g in enumerate(top_500_genes):
+        g_upper = g.strip().upper()
+        if g_upper in col_map:
+            actual_col = col_map[g_upper]
+            try:
+                raw_500[0, i] = float(df_raw[actual_col].values[0])
+            except Exception:
+                raw_500[0, i] = 0.0
+                
+    log2_500 = np.log2(raw_500 + 1.0)
+    df_log2 = pd.DataFrame(log2_500, columns=top_500_genes)
+    scaled_500 = scaler.transform(df_log2)
+    return scaled_500[0], pd.Series(scaled_500[0], index=top_500_genes)
+
+
+def get_external_demo_pairs(base_dir):
+    """
+    Finds available external SVS slides and their matched 1-row 20k RNA-Seq CSVs.
+    """
+    slides_dir = r"C:\Users\huynh\Desktop\slides"
+    demo_dir = os.path.join(base_dir, 'data', 'demo_external_pairs')
+    
+    pairs = []
+    if os.path.exists(slides_dir):
+        svs_files = [f for f in os.listdir(slides_dir) if f.lower().endswith('.svs')]
+        for f in svs_files:
+            # Extract PID
+            import re
+            m = re.search(r'(TCGA-[A-Z0-9]{2}-[A-Z0-9]{4})', f)
+            pid = m.group(1) if m else f[:12]
+            
+            # Check matching RNA CSV
+            csv_name = f"{pid}_rna_20k.csv"
+            csv_path1 = os.path.join(slides_dir, "demo_rna_csv", csv_name)
+            csv_path2 = os.path.join(demo_dir, csv_name)
+            
+            chosen_csv = csv_path1 if os.path.exists(csv_path1) else (csv_path2 if os.path.exists(csv_path2) else None)
+            
+            pairs.append({
+                'patient_id': pid,
+                'svs_filename': f,
+                'svs_path': os.path.join(slides_dir, f),
+                'csv_filename': csv_name,
+                'csv_path': chosen_csv,
+                'has_rna': chosen_csv is not None
+            })
+    return pairs

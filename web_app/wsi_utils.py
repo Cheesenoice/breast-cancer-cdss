@@ -61,24 +61,30 @@ def load_patient_patches(base_dir, pid, max_patches=24):
 
 
 def get_available_svs_slides(base_dir):
-    """Scans data/raw_svs/ and data/raw_svs/uploaded/ for any available .svs Whole Slide Images."""
-    svs_dir = os.path.join(base_dir, 'data', 'raw_svs')
+    """Scans data/raw_svs/, uploaded/, and C:/Users/huynh/Desktop/slides for any available SVS slides."""
+    scan_dirs = [
+        os.path.join(base_dir, 'data', 'raw_svs'),
+        r"C:\Users\huynh\Desktop\slides"
+    ]
     slides = []
+    seen_paths = set()
     
-    if os.path.exists(svs_dir):
-        # Walk to find all SVS files recursively (including uploaded)
-        for root, _, files in os.walk(svs_dir):
-            for f in files:
-                if f.lower().endswith(('.svs', '.tif', '.tiff', '.ndpi')):
-                    f_path = os.path.join(root, f)
-                    sz_mb = os.path.getsize(f_path) / (1024 * 1024)
-                    is_uploaded = 'uploaded' in root.lower()
-                    slides.append({
-                        'filename': f,
-                        'path': f_path,
-                        'size_mb': sz_mb,
-                        'is_uploaded': is_uploaded
-                    })
+    for s_dir in scan_dirs:
+        if os.path.exists(s_dir):
+            for root, _, files in os.walk(s_dir):
+                for f in files:
+                    if f.lower().endswith(('.svs', '.tif', '.tiff', '.ndpi')):
+                        f_path = os.path.join(root, f)
+                        if f_path not in seen_paths:
+                            seen_paths.add(f_path)
+                            sz_mb = os.path.getsize(f_path) / (1024 * 1024)
+                            is_uploaded = 'uploaded' in root.lower() or 'slides' in root.lower()
+                            slides.append({
+                                'filename': f,
+                                'path': f_path,
+                                'size_mb': sz_mb,
+                                'is_uploaded': is_uploaded
+                            })
     return slides
 
 
