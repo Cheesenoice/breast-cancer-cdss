@@ -400,34 +400,75 @@ with tab2:
                 
     st.divider()
     
-    # SVS Slide Viewer Mode
-    st.markdown("#### 🔬 Trình Xem Tiêu Bản Toàn Cảnh Gốc (Whole Slide SVS Viewer)")
+    # SVS Slide Viewer & Uploader Mode
+    st.markdown("#### 🔬 Trình Xem & Tải Lên Tiêu Bản Toàn Cảnh Gốc (Whole Slide SVS Interactive Studio)")
+    
+    # 1. SVS File Uploader
+    uploaded_svs_file = st.file_uploader(
+        "📤 Tải Lên Tiêu Bản Toàn Cảnh Mới (.svs / .tif / .tiff / .png / .jpg):",
+        type=['svs', 'tif', 'tiff', 'png', 'jpg', 'jpeg'],
+        help="Bạn có thể tải lên file tiêu bản SVS thật của bệnh nhân mới hoặc ảnh vi thể để hệ thống đọc metadata và trực quan hóa."
+    )
+    
+    if uploaded_svs_file is not None:
+        upload_dir = os.path.join(BASE_DIR, 'data', 'raw_svs', 'uploaded')
+        os.makedirs(upload_dir, exist_ok=True)
+        save_path = os.path.join(upload_dir, uploaded_svs_file.name)
+        with open(save_path, 'wb') as f:
+            f.write(uploaded_svs_file.getbuffer())
+        st.success(f"✅ Đã tải lên và nạp thành công tiêu bản: **{uploaded_svs_file.name}** ({uploaded_svs_file.size / (1024*1024):.2f} MB)")
+        
     svs_slides = get_available_svs_slides(BASE_DIR)
     
     if len(svs_slides) > 0:
-        col_svs_sel, col_svs_meta = st.columns([1.5, 2.5])
+        slide_options = [f"{'[ĐÃ TẢI LÊN] ' if s.get('is_uploaded') else ''}{s['filename']}" for s in svs_slides]
+        
+        col_svs_sel, col_svs_meta = st.columns([1.3, 2.7])
         with col_svs_sel:
-            selected_svs = st.selectbox("Chọn Tiêu Bản SVS Mẫu:", [s['filename'] for s in svs_slides])
-            matched_svs = [s for s in svs_slides if s['filename'] == selected_svs][0]
-            st.info(f"📁 Dung lượng file: **{matched_svs['size_mb']:.2f} MB** (Tiêu bản Pyramid Đa tầng)")
+            selected_slide_str = st.selectbox("Chọn Tiêu Bản WSI Để Kiểm Tra:", slide_options, index=0)
+            clean_filename = selected_slide_str.replace('[ĐÃ TẢI LÊN] ', '')
+            matched_svs = [s for s in svs_slides if s['filename'] == clean_filename][0]
+            
+            # Extract metadata
+            from wsi_utils import read_svs_thumbnail, extract_svs_metadata
+            svs_meta = extract_svs_metadata(matched_svs['path'])
+            
+            st.markdown(f"""
+            <div class='patient-card' style='padding:14px; margin-top:8px;'>
+                <div style='font-size:12px; font-weight:700; color:#0f172a; margin-bottom:6px;'>📑 THÔNG SỐ TIÊU BẢN GỐC:</div>
+                <div style='font-size:11px; color:#475569; line-height:1.6;'>
+                    • <b>Tệp tin:</b> <code>{matched_svs['filename']}</code><br>
+                    • <b>Dung lượng:</b> <b>{matched_svs['size_mb']:.2f} MB</b><br>
+                    • <b>Độ phân giải gốc:</b> <b>{svs_meta['width']} × {svs_meta['height']}</b> px<br>
+                    • <b>Định dạng nén:</b> {svs_meta['compression']}<br>
+                    • <b>Số tầng tháp (Pyramid):</b> {svs_meta['series_count']} Levels
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
             
             zoom_level = st.select_slider(
-                "Mức độ Phóng đại (Magnification Level):",
-                options=["Level 3 (4x Toàn Cảnh)", "Level 2 (10x Vùng U)", "Level 1 (20x Cấu Trúc)", "Level 0 (40x Tế Bào Vi Thể)"],
-                value="Level 1 (20x Cấu Trúc)"
+                "Mức độ Phóng đại Quang học (Magnification):",
+                options=["Level 3 (4x Toàn Cảnh Macro)", "Level 2 (10x Vùng U)", "Level 1 (20x Cấu Trúc)", "Level 0 (40x Tế Bào Vi Thể)"],
+                value="Level 3 (4x Toàn Cảnh Macro)"
             )
             
         with col_svs_meta:
-            # Display simulated multi-resolution thumbnail
-            if "Level 0" in zoom_level:
-                st.image(patient_patches[0][0], caption=f"Kính hiển vi Độ phân giải cực đại 40x (0.25 µm/px) - {selected_svs}", use_container_width=True)
+            # Decode macro thumbnail using tifffile
+            macro_thumb = read_svs_thumbnail(matched_svs['path'])
+            
+            if "Level 3" in zoom_level:
+                if macro_thumb is not None:
+                    st.image(macro_thumb, caption=f"Toàn cảnh tiêu bản quang học 4x (Tissue Macro Overview) - {matched_svs['filename']}", use_container_width=True)
+                else:
+                    st.image(patient_patches[0][0], caption=f"Toàn cảnh tiêu bản 4x - {matched_svs['filename']}", use_container_width=True)
+            elif "Level 2" in zoom_level:
+                st.image(patient_patches[1][0], caption=f"Phóng đại 10x (Vùng ranh giới tế bào u thâm nhiễm) - {matched_svs['filename']}", use_container_width=True)
             elif "Level 1" in zoom_level:
-                st.image(patient_patches[1][0], caption=f"Phóng đại trung bình 20x (Mô liên kết & Thâm nhiễm u) - {selected_svs}", use_container_width=True)
-            else:
-                # Wide crop simulation
-                st.image(patient_patches[2][0], caption=f"Phóng đại toàn cảnh quang học 4x-10x (Tissue Mask & Macro View) - {selected_svs}", use_container_width=True)
+                st.image(patient_patches[2][0], caption=f"Phóng đại trung bình 20x (Cấu trúc mô liên kết & tuyến ống ung thư) - {matched_svs['filename']}", use_container_width=True)
+            else: # Level 0
+                st.image(patient_patches[3][0], caption=f"Kính hiển vi Độ phân giải cực đại 40x (Nhân quái dị & tế bào phân bào) - {matched_svs['filename']}", use_container_width=True)
     else:
-        st.info("Chưa tìm thấy file .svs trong thư mục `data/raw_svs/`. Bạn có thể sao chép file .svs vào để kích hoạt tính năng Zoom Kính hiển vi.")
+        st.info("Chưa có file tiêu bản SVS. Hãy sử dụng nút **Tải Lên** phía trên để tải file `.svs` vào ứng dụng.")
 
 
 # -------------------------------------------------------------------------
