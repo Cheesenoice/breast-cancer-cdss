@@ -22,6 +22,7 @@ from model_utils import (
     load_cohort_data,
     run_transmil_inference,
     preprocess_raw_20k_rna,
+    extract_resnet50_features_from_patches,
     get_external_demo_pairs,
     LABEL_MAP,
     SUBTYPE_KEY_MAP
@@ -214,16 +215,20 @@ with st.sidebar:
 
 
 # =========================================================================
-# 3. RUN MULTIMODAL INFERENCE FOR SELECTED PATIENT
+# 3. RUN REAL-TIME MULTIMODAL INFERENCE FOR SELECTED PATIENT
 # =========================================================================
-# Prepare WSI tensor path
-pt_file = os.path.join(BASE_DIR, 'data', 'wsi_pt', f"{selected_pid}.pt")
-if not os.path.exists(pt_file):
-    # Fallback to any available pt file in demo folder if selecting outside golden cases
-    available_pts = [f for f in os.listdir(os.path.join(BASE_DIR, 'data', 'wsi_pt')) if f.endswith('.pt')]
-    pt_file = os.path.join(BASE_DIR, 'data', 'wsi_pt', available_pts[0])
+# 1. Load 24 real biopsy patches (dynamically slices real tissue from SVS if needed)
+patient_patches = load_patient_patches(BASE_DIR, selected_pid, max_patches=24, svs_path=external_svs_path)
 
-# Prepare Genomics vector (priority to real-time processed 20k RNA-Seq if in external mode)
+# 2. Extract vision features in real-time with ResNet50 (or load cached .pt if in standard demo)
+if is_external_mode or not os.path.exists(os.path.join(BASE_DIR, 'data', 'wsi_pt', f"{selected_pid}.pt")):
+    with st.spinner("Đang chạy mạng ResNet50 trích xuất vector 2048D từ các ô mô học SVS..."):
+        wsi_source = extract_resnet50_features_from_patches([p[0] for p in patient_patches], models['resnet'])
+else:
+    pt_file = os.path.join(BASE_DIR, 'data', 'wsi_pt', f"{selected_pid}.pt")
+    wsi_source = pt_file
+
+# 3. Prepare Genomics vector (priority to real-time processed 20k RNA-Seq if in external mode)
 if custom_gen_vector is not None:
     gen_vector = custom_gen_vector
     gen_series = custom_gen_series
@@ -234,8 +239,8 @@ else:
     gen_vector = rna_500.iloc[0].values
     gen_series = rna_500.iloc[0]
 
-# Run TransMIL Inference
-inference_res = run_transmil_inference(models['transmil'], pt_file, gen_vector)
+# 4. Run Multimodal TransMIL + Genomics Inference
+inference_res = run_transmil_inference(models['transmil'], wsi_source, gen_vector)
 pred_subtype = inference_res['pred_name']
 confidence = inference_res['confidence']
 probs = inference_res['probs']
@@ -540,7 +545,7 @@ with tab3:
         with st.spinner("Đang tính toán ma trận đạo hàm Integrated Gradients..."):
             xai_res = compute_gene_integrated_gradients(
                 models['transmil'],
-                pt_file,
+                wsi_source,
                 gen_vector,
                 target_class=inference_res['pred_label'],
                 top_500_genes=top_500_genes,

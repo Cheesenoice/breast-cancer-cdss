@@ -179,13 +179,37 @@ def load_models_and_scalers(base_dir):
     cph = joblib.load(os.path.join(model_dir, 'coxph_survival_model.joblib'))
     scaler = joblib.load(os.path.join(model_dir, 'scaler_genomics_500.joblib'))
     
+    # 4. ResNet50 Feature Extractor for on-the-spot SVS patch embedding
+    import torchvision.models as tv_models
+    resnet_extractor = tv_models.resnet50(weights=tv_models.ResNet50_Weights.DEFAULT)
+    resnet_extractor.fc = nn.Identity()
+    resnet_extractor.eval().to(device)
+    
     return {
         'transmil': model_transmil,
         'bilstm': model_bilstm,
         'pca': pca,
         'coxph': cph,
-        'scaler': scaler
+        'scaler': scaler,
+        'resnet': resnet_extractor
     }
+
+
+def extract_resnet50_features_from_patches(patches, resnet_model):
+    """
+    Extracts a (1, N, 2048) feature tensor from a list of PIL patch images in memory.
+    """
+    import torchvision.transforms as tv_transforms
+    transform = tv_transforms.Compose([
+        tv_transforms.Resize(224),
+        tv_transforms.CenterCrop(224),
+        tv_transforms.ToTensor(),
+        tv_transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    batch = torch.stack([transform(p) for p in patches]).to(device)
+    with torch.no_grad():
+        wsi_features = resnet_model(batch).unsqueeze(0) # (1, N, 2048)
+    return wsi_features
 
 @st.cache_data
 def load_cohort_data(base_dir):
@@ -225,15 +249,28 @@ def load_cohort_data(base_dir):
 # =========================================================================
 # 4. INFERENCE ENGINE
 # =========================================================================
-def run_transmil_inference(model, pt_path, gen_vector):
+def run_transmil_inference(model, img_source, gen_vector):
     """
-    Runs real-time inference on a patient's WSI .pt tensor and 500-gene vector.
+    Runs real-time inference on a patient's WSI (either .pt path or direct torch.Tensor) and 500-gene vector.
     Returns:
         pred_label (int), pred_name (str), confidence (float), probs (list),
         v_fusion (np.ndarray 1024D), patch_attentions (np.ndarray)
     """
-    img_tensor = torch.load(pt_path, map_location=device).unsqueeze(0)
-    gen_tensor = torch.tensor(gen_vector, dtype=torch.float32).unsqueeze(0).to(device)
+    if isinstance(img_source, torch.Tensor):
+        img_tensor = img_source.to(device)
+        if img_tensor.ndim == 2:
+            img_tensor = img_tensor.unsqueeze(0)
+    else:
+        img_tensor = torch.load(img_source, map_location=device)
+        if img_tensor.ndim == 2:
+            img_tensor = img_tensor.unsqueeze(0)
+            
+    if isinstance(gen_vector, torch.Tensor):
+        gen_tensor = gen_vector.to(device)
+        if gen_tensor.ndim == 1:
+            gen_tensor = gen_tensor.unsqueeze(0)
+    else:
+        gen_tensor = torch.tensor(gen_vector, dtype=torch.float32).unsqueeze(0).to(device)
     
     with torch.no_grad():
         logits, v_fusion, v_img, v_gen, patch_embeds = model(img_tensor, gen_tensor)

@@ -11,14 +11,27 @@ import plotly.express as px
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def compute_gene_integrated_gradients(model, pt_path, gen_vector, target_class, top_500_genes, n_steps=20):
+def compute_gene_integrated_gradients(model, img_source, gen_vector, target_class, top_500_genes, n_steps=20):
     """
     Computes Integrated Gradients attribution scores for the 500 genes with respect to target PAM50 class.
     Returns:
         top_genes (list), top_scores (list), and interactive Plotly horizontal bar figure.
     """
-    img_tensor = torch.load(pt_path, map_location=device).unsqueeze(0)
-    gen_tensor = torch.tensor(gen_vector, dtype=torch.float32).unsqueeze(0).to(device)
+    if isinstance(img_source, torch.Tensor):
+        img_tensor = img_source.to(device)
+        if img_tensor.ndim == 2:
+            img_tensor = img_tensor.unsqueeze(0)
+    else:
+        img_tensor = torch.load(img_source, map_location=device)
+        if img_tensor.ndim == 2:
+            img_tensor = img_tensor.unsqueeze(0)
+            
+    if isinstance(gen_vector, torch.Tensor):
+        gen_tensor = gen_vector.to(device)
+        if gen_tensor.ndim == 1:
+            gen_tensor = gen_tensor.unsqueeze(0)
+    else:
+        gen_tensor = torch.tensor(gen_vector, dtype=torch.float32).unsqueeze(0).to(device)
     
     # Baseline is zero vector (average expression after standard scaling)
     baseline_gen = torch.zeros_like(gen_tensor)
