@@ -1,0 +1,8 @@
+metric,value
+patients,1082.0
+genes,20511.0
+missing_values,0.0
+missing_rate,0.0
+zero_rate,0.1432795945298186
+duplicate_patients,0.0
+duplicate_genes,0.0

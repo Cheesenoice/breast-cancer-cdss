@@ -1,0 +1,6 @@
+Model,Accuracy (Mean ˙ Std),Macro-F1 (Mean ˙ Std),Raw_F1
+Random Forest (Engineered),0.5272 ˙ 0.0069,0.2022 ˙ 0.0109,0.20223771113870298
+SVM RBF (Engineered),0.5442 ˙ 0.0237,0.4460 ˙ 0.0288,0.4460017430838648
+Logistic Regression (Engineered),0.5023 ˙ 0.0368,0.4141 ˙ 0.0422,0.4140773674086688
+XGBoost (Engineered),0.5714 ˙ 0.0223,0.3913 ˙ 0.0266,0.39128961596723644
+Voting Ensemble (Engineered),0.5850 ˙ 0.0131,0.4254 ˙ 0.0187,0.42536160305625914

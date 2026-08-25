@@ -1,0 +1,13 @@
+{
+  "transmil_model": "TransMIL (Nystrom Attention, 512D) + Genomics MLP (512D)",
+  "bilstm_model": "BiLSTM (Bidirectional, 512D) + Genomics MLP (512D)",
+  "fusion": "Late Fusion Concatenation (1024D)",
+  "classifier": "Linear(1024, 256) -> ReLU -> Dropout(0.3) -> Linear(256, 4)",
+  "pca_components": 16,
+  "label_map": {
+    "BRCA_LumA": 0,
+    "BRCA_LumB": 1,
+    "BRCA_Basal": 2,
+    "BRCA_Her2": 3
+  }
+}

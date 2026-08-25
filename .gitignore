@@ -1,0 +1,61 @@
+# =========================================================================
+# GITIGNORE FOR MULTIMODAL AI TCGA-BRCA CDSS PROJECT
+# =========================================================================
+
+# 1. Heavy Raw Data Directories & Large Biopsy Archives
+data/
+*.svs
+*.pt
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# 2. Large Raw Data Files & Datasets
+*.txt.gz
+*.tar
+data_mrna_seq_v2_rsem.txt
+tcga-brca-resnet50-wsi-features/
+
+# 3. Python & IDE Caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 4. Jupyter & Streamlit Runtime
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+.streamlit/
+
+# 5. Temporary Inspection & Audit Logs
+*.log
+full_audit_report.txt
+inspected_md_details.txt
+demo_assets_analysis.txt
+nb6_outputs.txt
+nb_audit_summary.json
+
+# 6. Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini

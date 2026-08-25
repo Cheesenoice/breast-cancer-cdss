@@ -1,0 +1,911 @@
+bạn có biết bộ dữ liệu TCGA-BRCA ko. tôi cần bạn research paper làm những ai gì với bộ dữ liệu này. tôi sẽ dựng lại paper với kết quả tốt
+
+Bộ dữ liệu TCGA-BRCA (The Cancer Genome Atlas - Breast Invasive Carcinoma) là một trong những bộ dữ liệu chuẩn mực (benchmark) lớn và phức tạp nhất dành cho nghiên cứu ung thư vú. Nó chứa dữ liệu đa phương thức (multi-modal) bao gồm: hồ sơ lâm sàng, dữ liệu hệ gen (multi-omics như RNA-seq, DNA methylation), và ảnh mô bệnh học (Whole Slide Images - WSIs).
+
+Nếu bạn đang tìm kiếm một bài toán để dựng lại (reproduce) và cải tiến, dưới đây là 3 hướng nghiên cứu chính (kèm các task và baseline) mà giới nghiên cứu AI đang tập trung khai thác trên bộ dữ liệu này:
+
+1. Phân tích ảnh mô bệnh học (Histopathology - WSI)
+Do kích thước ảnh WSI cực kỳ lớn (lên tới hàng gigapixel), bạn không thể đưa thẳng vào mạng CNN thông thường. Các bài báo chủ yếu cắt ảnh thành các mảng nhỏ (patches/tiles) và dùng kỹ thuật học máy để dự đoán.
+
+Bài toán (Task): Phân loại nhóm con mô học (Histological subtype: ví dụ Invasive Ductal Carcinoma vs. Invasive Lobular Carcinoma) hoặc phân loại phân tử (Luminal vs. Non-luminal).  
+ResearchGate
+
+Mô hình phổ biến: Sử dụng các kiến trúc CNNs (ResNet, ConvNeXt) kết hợp với Multiple Instance Learning (MIL). Một framework rất nổi tiếng thường được dùng làm baseline là CLAM (được giới thiệu bởi Lu et al.).  
+ResearchGate
++ 1
+
+Kết quả Baseline: Đối với phân loại mô học, các mô hình sử dụng MIL kết hợp ConvNeXt có thể đạt độ chính xác (Accuracy) khoảng 0.92 và Macro F1 khoảng 0.86.  
+ResearchGate
+
+Ý tưởng cải tiến: Thay thế các mạng CNN trích xuất đặc trưng bằng Vision Transformers (ViT), hoặc áp dụng Self-Supervised Learning (như DINOv2) trên các patches không gắn nhãn trước khi đưa vào mạng MIL.
+
+2. Phân tích dữ liệu hệ gen (Multi-omics)
+Dữ liệu omics dạng bảng có tính nhiễu cao và số lượng đặc trưng (genes) thường lớn hơn rất nhiều so với số lượng bệnh nhân, dễ dẫn đến overfitting.
+
+Bài toán (Task): Phân loại giai đoạn ung thư (Cancer Staging) hoặc Dự đoán thời gian sống sót (Survival Analysis / Prognosis).
+
+Mô hình phổ biến: Đối với Machine Learning truyền thống, các thuật toán dạng cây (XGBoost, Random Forest) vẫn rất mạnh. Đối với Deep Learning, các kiến trúc Transformer (ví dụ: BulkRNABert - một mô hình ngôn ngữ huấn luyện trước trên dữ liệu RNA-seq) đang là xu hướng.
+
+Kết quả Baseline: C-Index cho các bài toán dự đoán Survival thường dao động từ 0.68 đến 0.74 tùy thuộc vào số lượng omics được sử dụng.
+
+Ý tưởng cải tiến: Sử dụng Graph Neural Networks (GNNs) để mô hình hóa mối quan hệ tương tác sinh học giữa các gen, thay vì chỉ coi chúng là các vector đặc trưng độc lập.
+
+3. Kết hợp đa phương thức (Multimodal Fusion) - Đang là SOTA
+Đây là hướng nghiên cứu đột phá và dễ có kết quả tốt nhất hiện nay, nhằm giải quyết bài toán phức tạp bằng cách "nhìn" bệnh nhân từ nhiều góc độ.
+
+Bài toán (Task): Đánh giá nguy cơ tái phát và Dự đoán thời gian sống sót tổng thể (Overall Survival) bằng cách kết hợp đồng thời Ảnh WSI + Dữ liệu gen + Dữ liệu lâm sàng.
+
+Mô hình phổ biến: BioFusionNet là một đại diện tiêu biểu. Các mô hình này dùng cơ chế Attention (như One-vs-Others Attention hoặc Co-Cross Attention) để đồng bộ và tìm ra mối liên hệ giữa các hình thái tế bào trên ảnh với mức độ biểu hiện gen.
+
+Kết quả Baseline: Đạt C-index vào khoảng 0.77 - 0.80, vượt trội hoàn toàn so với việc chỉ dùng đơn lẻ một loại dữ liệu.  
+InfoScience Trends
+
+Ý tưởng cải tiến: Thử nghiệm các chiến lược Fusion mới (Late Fusion vs. Tensor Fusion) hoặc dùng Contrastive Learning để ép các vector đặc trưng của Ảnh và Gen đồng nhất với nhau trong cùng một không gian ẩn (latent space) trước khi đưa vào module dự đoán.
+
+
+Hình ảnh này có hữu ích không?
+Lời khuyên cho bạn: Nếu bạn có background mạnh về Computer Vision, hãy chọn bài toán Multiple Instance Learning trên WSI. Nếu bạn muốn nhắm đến các paper hội nghị lớn (như MICCAI hoặc CVPR) và có đủ tài nguyên tính toán, hướng Multimodal Fusion (WSI + Omics) chắc chắn là con đường tốt nhất để đạt được kết quả SOTA (State-of-the-art) mới.
+
+Bạn muốn bắt tay vào tìm hiểu sâu hướng nghiên cứu nào?
+
+Phân tích ảnh mô bệnh học (WSI & MIL)
+
+Dự đoán Survival với Multi-omics
+
+Mô hình đa phương thức (Ảnh + Gen)
+1. Phân tích ảnh mô bệnh học (Histopathology - WSI)Do kích thước ảnh WSI cực kỳ lớn (lên tới hàng gigapixel), bạn không thể đưa thẳng vào mạng CNN thông thường. Các bài báo chủ yếu cắt ảnh thành các mảng nhỏ (patches/tiles) và dùng kỹ thuật học máy để dự đoán.Bài toán (Task): Phân loại nhóm con mô học (Histological subtype: ví dụ Invasive Ductal Carcinoma vs. Invasive Lobular Carcinoma) hoặc phân loại phân tử (Luminal vs. Non-luminal). Mô hình phổ biến: Sử dụng các kiến trúc CNNs (ResNet, ConvNeXt) kết hợp với Multiple Instance Learning (MIL). Một framework rất nổi tiếng thường được dùng làm baseline là CLAM (được giới thiệu bởi Lu et al.). Kết quả Baseline: Đối với phân loại mô học, các mô hình sử dụng MIL kết hợp ConvNeXt có thể đạt độ chính xác (Accuracy) khoảng 0.92 và Macro F1 khoảng 0.86. Ý tưởng cải tiến: Thay thế các mạng CNN trích xuất đặc trưng bằng Vision Transformers (ViT), hoặc áp dụng Self-Supervised Learning (như DINOv2) trên các patches không gắn nhãn trước khi đưa vào mạng MIL.
+
+
+
+
+
+tôi muốn làm đề tài này, bắt đầu luôn được ko, plan. cho tôi biết ở đoạn build mô hình, thì input và output như nào
+
+Tuyệt vời! Lựa chọn bài toán phân tích WSI (Whole Slide Image) với Multiple Instance Learning (MIL) là một hướng đi cực kỳ chuẩn xác và có tính ứng dụng rất cao trong y tế. Đây là một bài toán Computer Vision kinh điển nhưng luôn có "đất diễn" cho các ý tưởng tối ưu mới.
+
+Chúng ta sẽ bắt đầu bằng việc làm rõ cốt lõi của mô hình MIL (Input/Output), sau đó tôi sẽ vạch ra cho bạn lộ trình thực thi (Action Plan) từng bước một.
+
+Cốt lõi của mô hình MIL: Input và Output
+Trong các bài toán phân loại ảnh thông thường, bạn có 1 ảnh = 1 nhãn. Nhưng với ảnh WSI (kích thước có thể lên tới 100,000×100,000 pixels), ảnh quá lớn để đưa vào GPU, và thông tin ung thư thường chỉ nằm rải rác ở một vài khu vực nhỏ.
+
+MIL giải quyết vấn đề này bằng cách coi mỗi bệnh nhân (hoặc mỗi ảnh WSI) là một "Cái túi" (Bag) chứa hàng ngàn "Ví dụ" (Instances - chính là các mảnh ảnh nhỏ/patches).
+
+Luật của MIL: Túi bị gắn nhãn "Ác tính" nếu có ít nhất một patch bên trong là ác tính. Túi "Lành tính" khi tất cả các patch đều lành tính.
+
+Dưới đây là chi tiết luồng dữ liệu khi bạn build mô hình:
+
+
+Hình ảnh này có hữu ích không?
+1. Input tại thời điểm Huấn luyện (Training)
+Mạng học sâu của bạn sẽ không nhận trực tiếp ảnh pixel. Để tiết kiệm RAM và thời gian huấn luyện, bạn phải chạy một mạng CNN/ViT (như ResNet50 hoặc ConvNeXt đã pre-trained) để trích xuất đặc trưng của từng patch trước, lưu thành các file .pt (PyTorch tensor) hoặc .h5.
+
+Input thực sự đưa vào mạng MIL: Một ma trận X∈R 
+N×D
+ .
+
+N: Số lượng patches cắt ra từ 1 ảnh WSI (thường từ vài trăm đến hàng chục nghìn, N thay đổi tùy ảnh).
+
+D: Số chiều của vector đặc trưng (Feature dimension). Nếu dùng ResNet50, D=1024. Nếu dùng ViT-S, D=384.
+
+Nhãn (Label): Y∈{0,1} (ví dụ: 0 = Lành tính, 1 = Ác tính). Nhãn này chỉ có ở cấp độ WSI (Slide-level), mạng không biết nhãn của từng patch.
+
+2. Quá trình xử lý (Aggregation)
+Mạng MIL phải tìm cách nén ma trận X có kích thước [N,D] thành một vector duy nhất kích thước [1,D] đại diện cho toàn bộ bức ảnh.
+
+Baseline cổ điển: Dùng Max Pooling hoặc Mean Pooling.
+
+State-of-the-art (như mô hình CLAM): Dùng Attention Mechanism. Mạng sẽ học một hàm để gán trọng số (attention score) cho từng patch. Patch nào mạng nghĩ là chứa tế bào ung thư sẽ có trọng số cao hơn.
+
+3. Output
+Slide-level Prediction: Xác suất  
+Y
+^
+  (từ 0 đến 1) dự đoán ảnh đó thuộc nhóm ung thư nào.
+
+Attention Scores (Output phụ vô cùng quan trọng): Một vector độ dài N chứa trọng số của từng patch. Bạn sẽ dùng các số này để tô màu ngược lại lên ảnh WSI gốc, tạo ra bản đồ nhiệt (Heatmap) chỉ ra cho bác sĩ xem mô hình đang "nhìn" vào đâu để ra quyết định.
+
+Action Plan: Kế hoạch triển khai dự án
+Để đi từ con số 0 đến việc reproduce thành công một paper baseline, bạn cần làm theo lộ trình 5 bước sau:
+
+1
+Thu thập và tổ chức dữ liệu TCGA-BRCA
+Cần ổ cứng dung lượng lớn (khoảng 500GB - 1TB)
+Bạn không cần tải toàn bộ. Hãy bắt đầu với một tập con (subset) khoảng 200-500 ảnh WSI định dạng .svs qua GDC Data Portal.
+
+Tải manifest file, dùng công cụ gdc-client để download.
+
+Tải kèm file Clinical Data (chứa nhãn Histological Subtype).
+
+2
+Tiền xử lý (Preprocessing): Cắt Patch
+Bước tốn thời gian chạy máy nhất
+Sử dụng thư viện OpenSlide hoặc công cụ có sẵn như CLAM's WSI processing tool.
+
+Đọc ảnh WSI, loại bỏ các vùng nền trắng (background) hoặc vùng không có mô tế bào bằng phương pháp phân ngưỡng (Otsu Thresholding).
+
+Cắt các vùng có mô thành các patch nhỏ kích thước 256×256 pixels ở độ phóng đại 20×.
+
+3
+Trích xuất đặc trưng (Feature Extraction)
+Chạy 1 lần rồi lưu lại
+Sử dụng một mô hình CNN hoặc ViT đã được huấn luyện sẵn (Pre-trained) trên ImageNet hoặc dữ liệu y tế (như CTransPath, PLIP).
+
+Cho toàn bộ các patch của một WSI đi qua mạng này (chỉ Forward pass, không tính gradient).
+
+Lưu kết quả của mỗi ảnh WSI thành một file .pt (kích thước [N,D]) để phục vụ cho bước huấn luyện MIL.
+
+4
+Huấn luyện mô hình MIL
+Phần code chính của bạn
+Lập trình mạng Attention-MIL (ABMIL) hoặc sử dụng mã nguồn của CLAM (Data-efficient and weakly supervised computational pathology on whole-slide images).
+
+Input: Tập hợp các file .pt từ Bước 3.
+
+Output: Dự đoán subtype.
+
+Metrics: Đo lường Accuracy, AUC (Area Under Curve), F1-Score. Sử dụng K-Fold Cross Validation.
+
+5
+Đánh giá và vẽ Heatmap (Interpretability)
+Trích xuất Attention Scores từ mô hình đã huấn luyện.
+
+Map các điểm số này ngược lại vị trí tọa độ (x,y) của các patch trên ảnh WSI gốc.
+
+Vẽ Heatmap chồng lên ảnh gốc. Các vùng đỏ sẫm tương ứng với các vùng mô hình tập trung vào (thường là khối u).
+
+Bạn đã cài đặt môi trường Python (PyTorch, OpenSlide) chưa?
+
+Có
+dự án thực tập sinh viên 2 tháng, tôi muốn train trên kaggle và dùng kaggle để khỏi phải tải data. tìm các bộ cho tôi. bộ nào đẩy đủ. còn ko thì phải ghép bộ data kaggle lại
+
+Tuyệt vời! Lựa chọn huấn luyện trực tiếp trên nền tảng Kaggle là một chiến lược rất thông minh cho một dự án thực tập 2 tháng. Nếu bạn tải toàn bộ ảnh WSI gốc của TCGA (hàng trăm Gigabytes đến Terabytes) về máy cá nhân, bạn sẽ mất đến cả tháng chỉ để xử lý dữ liệu.
+
+Kaggle hoàn toàn có sẵn các bộ dữ liệu đã được cắt patch sẵn cho bài toán ung thư vú. Bạn không cần phải tự tải về, chỉ cần tạo Notebook và nhấn "Add Data".
+
+Dưới đây là các bộ dữ liệu phù hợp nhất trên Kaggle và chiến lược "Kaggle Dataset Chaining" để lách luật giới hạn thời gian/RAM của hệ thống.
+
+Các bộ dữ liệu WSI Breast Cancer có sẵn trên Kaggle
+1. TCGA-BRCA: Survival Analysis (Phù hợp nhất)  
+Kaggle
+Đây là bộ dữ liệu gần như hoàn hảo nhất cho yêu cầu của bạn, được trích xuất trực tiếp từ TCGA-BRCA.
+
+Người đăng (Tên trên Kaggle): jmalagontorres
+
+Nội dung: Bộ dữ liệu chứa dữ liệu của 1097 bệnh nhân ung thư vú từ TCGA.
+
+Dữ liệu ảnh: Tác giả đã cắt sẵn các patches có chứa mô (loại bỏ vùng trắng) từ ảnh WSI với kích thước 1000×1000 pixels ở độ phóng đại 20x.
+
+Dữ liệu lâm sàng: Có sẵn file CSV chứa thông tin thời gian sống sót (Time until death) và tình trạng (Vital status), rất lý tưởng nếu bạn muốn làm bài toán MIL dự đoán Survival.  
+Kaggle
+
+2. BreakHis (Breast Cancer Histopathological Database)  
+Kaggle
+Nếu bộ TCGA-BRCA ở trên quá lớn hoặc bạn muốn làm bài toán phân loại Lành tính/Ác tính cơ bản hơn để làm quen với MIL.
+
+Người đăng: ambarish hoặc waseemalastal
+
+Nội dung: Gồm 9,109 ảnh vi thể từ 82 bệnh nhân.  
+Kaggle
+
+Đặc điểm: Các ảnh có kích thước 700×460 pixels, chia làm 4 độ phóng đại (40X, 100X, 200X, 400X). Bạn có thể coi tập hợp tất cả các ảnh của 1 bệnh nhân là một "Túi" (Bag) và áp dụng mạng MIL.  
+Kaggle
++ 1
+
+3. Camelyon16 / Camelyon17 (Benchmark kinh điển cho MIL)
+Dù không phải TCGA, đây là bộ dữ liệu nổi tiếng nhất thế giới về MIL cho ung thư vú (phát hiện di căn hạch bạch huyết). Nếu bạn muốn có kết quả để so sánh trực tiếp với các paper lớn, hãy search từ khóa camelyon16 patches trên Kaggle. Có rất nhiều người đã upload các bản patch 256×256 của bộ dữ liệu này.  
+Kaggle
+
+Kế hoạch thực thi 2 tháng trên Kaggle (Không cần tải Data)
+Kaggle có giới hạn: Kernel chỉ chạy tối đa 12 tiếng liên tục và dung lượng ổ đĩa tạm /kaggle/working/ chỉ có 20GB. Nếu bạn vừa load ảnh, vừa trích xuất đặc trưng, vừa train MIL trong 1 file Notebook, hệ thống sẽ bị văng (Out of Memory/Timeout).
+
+Để giải quyết, bạn bắt buộc phải chia dự án thành 2 Notebook riêng biệt (Kaggle Dataset Chaining).
+
+1
+Notebook 1: Trích xuất đặc trưng (Feature Extractor)
+Tiết kiệm tài nguyên
+Tạo Notebook 1, Add bộ data TCGA-BRCA:survival analysis vào.
+
+Tải một pre-trained model (ví dụ: ResNet50 hoặc ConvNeXt).
+
+Viết vòng lặp đi qua từng bệnh nhân. Đọc các patch 1000×1000, resize về 224×224 (nếu cần), đẩy qua ResNet50 để lấy vector đặc trưng (không tính gradient, set model.eval()).
+
+Lưu vector của mỗi bệnh nhân thành 1 file Tensor (ví dụ: patient_001.pt có shape [N, 1024]).
+
+Lưu toàn bộ vào folder /kaggle/working/.
+
+Nhấn "Save Version" (Commit) để Kaggle chạy ngầm.
+
+2
+Tạo Dataset mới từ Output của Notebook 1
+Tạo bộ data của riêng bạn
+Sau khi Notebook 1 chạy xong (có thể mất vài tiếng), vào mục Datasets trên Kaggle -> New Dataset.
+
+Chọn nguồn là từ Notebook của bạn. Kaggle sẽ tự động đóng gói các file .pt mà bạn vừa tạo ra thành một bộ Dataset mới. Việc này không tốn dung lượng máy cá nhân của bạn một chút nào.
+
+3
+Notebook 2: Huấn luyện mạng MIL
+Train siêu tốc
+Tạo Notebook 2, Add bộ Dataset chứa file .pt bạn vừa tạo ở Bước 2 vào. (Không add ảnh gốc nữa).
+
+Xây dựng mô hình Attention-MIL (như CLAM).
+
+Lúc này, Input của mô hình MIL chỉ là các file ma trận số (Tensors), không phải load file ảnh nặng nề nữa. Quá trình huấn luyện 1 epoch có thể chỉ mất vài chục giây thay vì vài giờ. Bạn có thể thoải mái tinh chỉnh (tuning) siêu tham số (hyperparameters).
+
+Lưu ý quan trọng cho thực tập sinh: Ở Bước 1, nếu dữ liệu 1097 bệnh nhân mất quá 12 tiếng để chạy trích xuất, hãy chia nhỏ ra. Bạn có thể code để lấy subset khoảng 200 bệnh nhân trước để làm Proof of Concept (PoC) báo cáo với mentor, đảm bảo luồng chạy xuyên suốt trước khi chạy full data.
+
+Muốn xin code mẫu trích xuất đặc trưng?
+
+Có
+Các kỹ thuật xử lý ảnh y khoa và phân tích dữ liệu sức khỏe.
+
+Mô hình CNN, LSTM và Transformer trong chẩn đoán bệnh và dự báo tình trạng sức khỏe.
+
+Các chỉ số đánh giá mô hình như Accuracy, Precision, Recall, F1-score và AUC - chỉ số chuẩn khác vẫn chấp nhận.
+
+Xu hướng ứng dụng AI trong hỗ trợ quyết định lâm sàng và y tế thông minh.
+
+Nội dung Thực hành
+
+Thu thập và tiền xử lý dữ liệu ảnh y khoa hoặc dữ liệu sức khỏe từ các nguồn công khai.
+
+
+
+Xây dựng mô hình AI để phát hiện hoặc phân loại bệnh từ ảnh y tế (X-quang, CT, MRI, da liễu,...).
+
+Phát triển hệ thống dự báo hoặc theo dõi sức khỏe dựa trên dữ liệu bệnh nhân.
+
+Đánh giá hiệu năng mô hình bằng các chỉ số thực nghiệm.
+
+So sánh kết quả với các phương pháp truyền thống và đề xuất giải pháp cải thiện độ chính xác.
+
+
+
+plan cho tôi đi. toi chỉ build lại thôi
+
+
+
+tôi thích kế hoạch này. 1.Notebook 1: Trích xuất đặc trưng (Feature Extractor):Tiết kiệm tài nguyên.Tạo Notebook 1, Add bộ data TCGA-BRCA:survival analysis vào.
+
+Tải một pre-trained model (ví dụ: ResNet50 hoặc ConvNeXt).
+
+Viết vòng lặp đi qua từng bệnh nhân. Đọc các patch $1000 \times 1000$, resize về $224 \times 224$ (nếu cần), đẩy qua ResNet50 để lấy vector đặc trưng (không tính gradient, set model.eval()).
+
+Lưu vector của mỗi bệnh nhân thành 1 file Tensor (ví dụ: patient_001.pt có shape [N, 1024]).
+
+Lưu toàn bộ vào folder /kaggle/working/.
+
+Nhấn "Save Version" (Commit) để Kaggle chạy ngầm.
+
+2.Tạo Dataset mới từ Output của Notebook 1:Tạo bộ data của riêng bạn.Sau khi Notebook 1 chạy xong (có thể mất vài tiếng), vào mục Datasets trên Kaggle -> New Dataset.
+
+Chọn nguồn là từ Notebook của bạn. Kaggle sẽ tự động đóng gói các file .pt mà bạn vừa tạo ra thành một bộ Dataset mới. Việc này không tốn dung lượng máy cá nhân của bạn một chút nào.
+
+3.Notebook 2: Huấn luyện mạng MIL:Train siêu tốc.Tạo Notebook 2, Add bộ Dataset chứa file .pt bạn vừa tạo ở Bước 2 vào. (Không add ảnh gốc nữa).
+
+Xây dựng mô hình Attention-MIL (như CLAM).
+
+Lúc này, Input của mô hình MIL chỉ là các file ma trận số (Tensors), không phải load file ảnh nặng nề nữa. Quá trình huấn luyện 1 epoch có thể chỉ mất vài chục giây thay vì vài giờ. Bạn có thể thoải mái tinh chỉnh (tuning) siêu tham số (hyperparameters).
+
+Lưu ý quan trọng cho thực tập sinh: Ở Bước 1, nếu dữ liệu 1097 bệnh nhân mất quá 12 tiếng để chạy trích xuất, hãy chia nhỏ ra. Bạn có thể code để lấy subset khoảng 200 bệnh nhân trước để làm Proof of Concept (PoC) báo cáo với mentor, đảm bảo luồng chạy xuyên suốt trước khi chạy full data.
+
+Tuyệt vời! Cách tiếp cận "chỉ build lại" (reproduce) một quy trình chuẩn xác của các paper lớn là cách khôn ngoan nhất để học và đảm bảo có kết quả tốt trong 2 tháng thực tập. Quy trình Kaggle (chia làm 2 Notebook) mà bạn thích chính là Standard Pipeline (quy trình chuẩn) mà các kỹ sư AI y tế đang sử dụng thực tế để trị các dữ liệu khổng lồ.
+
+Để bạn dễ dàng báo cáo với Mentor/Giảng viên, tôi sẽ khớp nối trực tiếp các yêu cầu thực tập của bạn vào dự án TCGA-BRCA (phân tích ảnh mô bệnh học bằng MIL) và chia thành Kế hoạch 8 tuần (2 tháng) chi tiết.
+
+📌 Khớp nối dự án của bạn với Yêu cầu Thực tập:
+Xử lý ảnh y khoa & Tiền xử lý: Sử dụng tập patch của TCGA-BRCA trên Kaggle.
+
+Mô hình CNN & Transformer: Dùng CNN (ResNet50) ở Notebook 1 để trích xuất đặc trưng. Dùng Attention-MIL hoặc TransMIL (Transformer) ở Notebook 2 để phân loại.
+
+Chỉ số đánh giá: Tính toán Accuracy, Precision, Recall, F1-score và AUC trên tập test.
+
+AI hỗ trợ quyết định lâm sàng: Trích xuất Attention Heatmap (bản đồ nhiệt) để chỉ ra chính xác vùng tế bào ung thư cho bác sĩ xem.
+
+So sánh phương pháp: So sánh mô hình kết hợp (Pooling truyền thống: Max/Mean) với mô hình AI tiên tiến (Attention Pooling).
+
+📅 Lộ trình Thực tập 2 tháng (8 Tuần) - Dự án "TCGA-BRCA MIL Classifier"
+PHASE 1: CHUẨN BỊ DỮ LIỆU & TRÍCH XUẤT ĐẶC TRƯNG (Tuần 1 - Tuần 2)
+Mục tiêu: Hoàn thành Notebook 1 và tạo ra bộ Dataset dạng Tensor (.pt).
+
+Tuần 1: Setup & Code PoC (Proof of Concept)
+
+Tạo Kaggle Notebook 1, Add bộ data TCGA-BRCA (như đã bàn).
+
+Viết code PyTorch load mô hình CNN pre-trained (ResNet50).
+
+Viết Dataset/DataLoader để đọc thử khoảng 20 bệnh nhân đầu tiên.
+
+Đưa ảnh qua model, lưu thành 20 file .pt để đảm bảo code chạy không có lỗi (bug-free).
+
+Tuần 2: Run Full Data & Create Dataset
+
+Chạy code trên toàn bộ ~1000 bệnh nhân (Gợi ý: Dùng GPU P100 hoặc T4x2 của Kaggle).
+
+Lưu toàn bộ output vào /kaggle/working/.
+
+Commit (Save Version) và chờ Kaggle chạy ngầm.
+
+Khi xong, tạo Kaggle Dataset mới từ output của Notebook 1. Kết thúc Phase 1: Bạn đã có bộ data ma trận siêu nhẹ.
+
+PHASE 2: XÂY DỰNG MÔ HÌNH MIL & ĐÁNH GIÁ (Tuần 3 - Tuần 5)
+Mục tiêu: Xây dựng Notebook 2, code mô hình và tính toán các chỉ số.
+
+Tuần 3: Build Baseline Model (So sánh với phương pháp truyền thống)
+
+Tạo Notebook 2, import bộ Dataset .pt vừa tạo.
+
+Code mô hình Baseline đơn giản: Lấy trung bình cộng (Mean Pooling) hoặc Gía trị lớn nhất (Max Pooling) của tất cả các patches, sau đó cho qua 1 lớp Linear (FCN) để phân loại.
+
+Thiết lập hàm Loss (Cross Entropy) và Optimizer (Adam). Chạy thử 10 epochs.
+
+Tuần 4: Build Advanced Model (Attention-MIL)
+
+Code mô hình ABMIL (Attention-Based Multiple Instance Learning). Thay vì Mean/Max, mạng sẽ học cách tự đánh trọng số (attention score) cho từng file .pt.
+
+Train mô hình này. (Vì Input là Tensor nên train rất nhanh, vài phút là xong).
+
+Tuần 5: Code Metrics & Đánh giá (Evaluation)
+
+Sử dụng thư viện scikit-learn để code tính các chỉ số: Accuracy, Precision, Recall, F1-score và vẽ biểu đồ ROC-AUC.
+
+So sánh kết quả của Baseline (Tuần 3) và Attention-MIL (Tuần 4). Ghi chú lại kết quả để viết báo cáo.
+
+PHASE 3: NÂNG CẤP & ỨNG DỤNG LÂM SÀNG (Tuần 6 - Tuần 7)
+Mục tiêu: Đẩy mạnh tính ứng dụng y tế (Clinical Decision Support).
+
+Tuần 6: Khai phá Transformer (Tùy chọn nâng cao - Điểm cộng cực lớn)
+
+Nếu có thời gian, bạn có thể thử code nghiệm TransMIL (đưa các tensor .pt vào mô hình Transformer để xét mối tương quan vị trí giữa các patch tế bào).
+
+So sánh kết quả với Attention-MIL.
+
+Tuần 7: Vẽ Attention Heatmap (Giải thích mô hình - Explainable AI)
+
+Trích xuất trọng số Attention từ mô hình đã train (Notebook 2).
+
+Viết code map các trọng số này lên một ảnh bệnh lý gốc để tạo Heatmap (vùng đỏ là tế bào ung thư, vùng xanh là bình thường).
+
+Đây chính là yếu tố "Hệ thống hỗ trợ quyết định lâm sàng và y tế thông minh" mà syllabus yêu cầu.
+
+PHASE 4: TỔNG KẾT & VIẾT BÁO CÁO (Tuần 8)
+Dọn dẹp code trên 2 file Kaggle Notebook cho sạch đẹp, thêm comment giải thích.
+
+Notebook_1_Feature_Extractor.ipynb
+
+Notebook_2_MIL_Classifier.ipynb
+
+Viết báo cáo thực tập:
+
+Trình bày vấn đề giới hạn phần cứng khi xử lý ảnh Y tế gigapixel.
+
+Trình bày giải pháp: Tách pipeline thành trích xuất đặc trưng (CNN) và phân loại (MIL).
+
+Show biểu đồ (AUC, F1) chứng minh mô hình Attention tốt hơn phương pháp truyền thống.
+
+Show ảnh Heatmap để chứng minh mô hình có thể giải thích được cho bác sĩ.
+
+Bắt đầu ngay lập tức: Bạn hãy đăng nhập Kaggle, tạo Notebook 1. Báo cho tôi biết khi bạn đã mở xong, tôi sẽ cung cấp đoạn code PyTorch chuẩn xác nhất cho Notebook 1 để load mô hình ResNet50, trích xuất vector và lưu file .pt. Bạn chỉ việc copy/paste và chạy thử trên tập data TCGA!
+
+Cung cấp code cho Notebook 1
+
+Có
+ok theo các paper, chia train val test như nào nhỉ
+
+Tuần 1: Setup & Code PoC (Proof of Concept)
+
+
+
+Tạo Kaggle Notebook 1, Add bộ data TCGA-BRCA (như đã bàn).
+
+Viết code PyTorch load mô hình CNN pre-trained (ResNet50).
+
+Viết Dataset/DataLoader để đọc thử khoảng 20 bệnh nhân đầu tiên.
+
+Đưa ảnh qua model, lưu thành 20 file .pt để đảm bảo code chạy không có lỗi (bug-free).
+
+Tuần 2: Run Full Data & Create Dataset
+
+
+
+Chạy code trên toàn bộ ~1000 bệnh nhân (Gợi ý: Dùng GPU P100 hoặc T4x2 của Kaggle).
+
+Lưu toàn bộ output vào /kaggle/working/.
+
+Commit (Save Version) và chờ Kaggle chạy ngầm.
+
+Khi xong, tạo Kaggle Dataset mới từ output của Notebook 1. Kết thúc Phase 1: Bạn đã có bộ data ma trận siêu nhẹ
+
+
+
+chứ ở tuần 2 tôi thấy train toàn bộ là sao ko hiểu
+
+Chào bạn, đây là một câu hỏi cực kỳ xuất sắc và bạn đã chỉ ra một điểm rất dễ gây nhầm lẫn!
+
+Sự nhầm lẫn ở đây nằm ở khái niệm "Trích xuất đặc trưng" (Feature Extraction - Tuần 2) và "Huấn luyện mô hình" (Training - Tuần 3, 4).
+
+Hãy để tôi giải thích rõ ràng tại sao ở Tuần 2 chúng ta lại "chạy toàn bộ", và sau đó các paper chia Train/Val/Test như thế nào nhé.
+
+1. Giải oan cho "Tuần 2": Đó KHÔNG PHẢI là Training!
+Ở Notebook 1 (Tuần 1 & 2), chúng ta không huấn luyện (train) bất kỳ cái gì cả.
+
+Mục đích của Tuần 2: Đổi định dạng dữ liệu từ Ảnh (Pixels) sang Số (Tensors) để cho nhẹ máy.
+
+Chúng ta dùng một mạng ResNet50 đã được huấn luyện sẵn từ trước (Pre-trained), khóa trọng số lại (không cho nó học thêm gì cả bằng hàm model.eval()), và truyền toàn bộ 1000 bệnh nhân qua mạng này.
+
+Kết quả: 1000 folder ảnh khổng lồ sẽ biến thành 1000 file .pt nhỏ xíu.
+
+Kết luận: Vì đây chỉ là bước "sơ chế dữ liệu" (giống như bạn gọt vỏ toàn bộ 1000 quả cam trước khi vắt nước), nên bạn phải chạy cho toàn bộ data. Bạn chưa cần chia Train/Val/Test ở bước này.
+
+2. Vậy chia Train/Val/Test ở đâu? (Notebook 2 - Tuần 3)
+Việc chia tập dữ liệu sẽ được thực hiện bằng Code ở Notebook 2, ngay trước khi bạn đưa các file .pt vào huấn luyện mạng MIL.
+
+Theo các paper nghiên cứu chuẩn mực trên bộ TCGA, đây là 2 quy tắc "sống còn" khi chia dữ liệu:
+
+🚨 Quy tắc số 1 (Bắt buộc): Chia theo Bệnh nhân (Patient-level Split)
+Tuyệt đối KHÔNG trộn lẫn tất cả các patches của 1000 bệnh nhân vào chung một rổ rồi mới chia ngẫu nhiên 80/20.
+
+Lý do: Một bệnh nhân có hàng ngàn patch ảnh. Nếu chia ngẫu nhiên, patch của bệnh nhân A vừa nằm trong tập Train, vừa lọt vào tập Test. Mô hình sẽ học thuộc lòng tế bào của bệnh nhân A, dẫn đến hiện tượng Rò rỉ dữ liệu (Data Leakage). Kết quả Test sẽ cao chót vót nhưng mang ra thực tế dùng là sai bét.
+
+Cách đúng: Tách hẳn danh sách 1000 bệnh nhân. Bệnh nhân nào nằm ở tập Train thì toàn bộ ảnh của họ ở tập Train. Bệnh nhân ở tập Test thì mô hình chưa từng được thấy ảnh của họ bao giờ.
+
+Quy tắc số 2: Tỉ lệ chia (Theo các Paper MIL)
+Các paper thường dùng 1 trong 2 cách sau:
+
+Cách 1: Stratified k-fold Cross Validation (Khuyên dùng cho paper)
+
+Thay vì chia cố định một lần, họ chia ngẫu nhiên danh sách bệnh nhân thành 3 hoặc 5 phần (3-fold hoặc 5-fold) có tỉ lệ nhãn bằng nhau (Stratified).
+
+Ví dụ (5-fold):
+
+80% Train & Val, 20% Test. Lặp lại việc này 5 lần để mọi bệnh nhân đều được test.
+
+Hơi phức tạp để code nếu bạn mới làm quen, nhưng điểm số sẽ cực kỳ đáng tin cậy.
+
+Cách 2: Fixed Hold-out Split (Khuyên dùng cho đồ án thực tập)
+
+Chia cố định 1 lần danh sách bệnh nhân theo tỉ lệ: 70% Train - 10% Validation - 20% Test (Hoặc 60-20-20).
+
+Train (60-70%): Dùng để cập nhật trọng số mạng MIL.
+
+Validation (10-20%): Dùng để theo dõi sau mỗi epoch xem mô hình có bị Overfitting không, từ đó điều chỉnh siêu tham số (Hyperparameters).
+
+Test (20%): Cất vào tủ khóa lại, KHÔNG ĐƯỢC CHẠM VÀO trong suốt quá trình code/train. Chỉ khi nào huấn luyện xong xuôi hoàn toàn mới lấy ra chạy đúng 1 lần để đo AUC, F1-score ghi vào báo cáo.
+
+Tóm tắt lại Flow cho bạn:
+
+Notebook 1: Dọn sạch data, nén toàn bộ 1000 BN thành 1000 file vector .pt. (Không chia chác gì cả).
+
+Notebook 2:
+
+Đọc list 1000 tên file .pt.
+
+Dùng hàm train_test_split của thư viện sklearn chia list tên file này theo tỉ lệ 70-10-20.
+
+Đưa 70% vào Train, 10% vào Val.
+
+Xong xuôi thì mang 20% còn lại ra Test.
+
+Cho tôi code Notebook 1
+
+Có
+20 bệnh nhân (PoC) và 1.000 bệnh nhân (Full dataset) sẽ mất bao lâu. tài nguyên của tôi chỉ có t4x2 free
+
+Tính toán thời gian chạy thực tế trên phần cứng là một kỹ năng cực kỳ quan trọng của kỹ sư AI. Với tài nguyên T4x2 (2 card GPU Tesla T4, mỗi card 16GB VRAM) miễn phí của Kaggle, bạn đang có một cỗ máy suy luận (inference) rất mạnh.
+
+Tuy nhiên, "nút thắt cổ chai" (bottleneck) ở đây không phải là GPU, mà là tốc độ đọc hàng triệu file ảnh nhỏ từ ổ cứng của Kaggle (Disk I/O).
+
+Dựa trên kinh nghiệm xử lý bộ TCGA, dưới đây là ước tính thời gian và chiến lược tối ưu cho bạn:
+
+1. Ước tính thời gian
+Trung bình, mỗi bệnh nhân (1 ảnh WSI) khi cắt ra sẽ có khoảng 2,000 đến 5,000 patches (tùy vào kích thước khối u).
+
+Tốc độ xử lý dự kiến: Với ResNet50 + T4x2 (nếu code chuẩn), bạn có thể xử lý khoảng 500 - 800 patches/giây (đã tính cả thời gian đọc ảnh từ ổ cứng và resize). Suy ra, mất khoảng 20 đến 40 giây cho mỗi bệnh nhân.
+
+PoC 20 bệnh nhân: Sẽ mất khoảng 10 đến 15 phút. (Đủ nhanh để bạn debug, sửa lỗi code và uống một tách cà phê).
+
+Full 1.000 bệnh nhân: Sẽ mất khoảng 8 đến 11 tiếng chạy liên tục.
+
+🚨 CẢNH BÁO QUAN TRỌNG: Kaggle có giới hạn thời gian chạy tối đa cho một Kernel (Notebook) là 12 tiếng liên tục. Thời gian 8-11 tiếng là rất sát nút. Nếu server Kaggle hôm đó bị nghẽn I/O, thời gian có thể vượt quá 12 tiếng và Kernel của bạn sẽ bị ép dừng (chết ngỏm) mà không lưu lại bất cứ thứ gì!
+
+2. Ba thủ thuật ép xung tốc độ trên Kaggle T4x2
+Để đảm bảo Notebook 1 chạy xong an toàn dưới 12 tiếng, trong code của bạn bắt buộc phải có 3 kỹ thuật tối ưu sau:
+
+Bật chế độ Đa GPU (DataParallel):
+Bạn có 2 card T4, phải bắt cả 2 cùng làm việc. Trong PyTorch, chỉ cần 1 dòng code:
+model = torch.nn.DataParallel(model)
+
+Tăng Batch Size lên kịch kim:
+Thay vì đẩy từng ảnh, hãy đẩy một cục ảnh vào GPU. ResNet50 rất nhẹ, mỗi card T4 16GB có thể gánh batch size 256. Với 2 card, bạn set batch_size = 512.
+
+Bật cỗ máy đọc ảnh song song (Dataloader Workers):
+Trong hàm DataLoader, bắt buộc phải set num_workers=2 hoặc num_workers=4 và pin_memory=True. CPU của Kaggle sẽ lo việc đọc ảnh từ ổ cứng chuẩn bị sẵn, để GPU không bao giờ phải ngồi chơi xơi nước chờ dữ liệu.
+
+3. Kế hoạch chạy an toàn (Safe Execution Plan)
+Đừng nhắm mắt chạy một mạch 1.000 bệnh nhân. Hãy làm theo cách của các Senior:
+
+Bước 1: Chạy PoC 20 bệnh nhân.
+
+Bước 2: Nhìn vào đồng hồ (ví dụ code báo: Processed 20 patients in 600 seconds).
+
+Bước 3: Làm một phép toán nhỏ. (600s / 20 = 30s/bệnh nhân). Suy ra 1000 bệnh nhân cần 30,000s (khoảng 8.3 tiếng). Nằm trong vùng an toàn (< 11 tiếng), bạn có thể tự tin nhấn "Save Version" cho chạy Full.
+
+Bước 4 (Kế hoạch B): Nếu phép tính ở Bước 3 ra kết quả > 11 tiếng, bạn phải chia data làm 2 nửa.
+
+Tạo Notebook 1A: Chạy từ bệnh nhân 0 đến 500 (mất 6 tiếng).
+
+Tạo Notebook 1B (copy y hệt 1A): Chạy từ bệnh nhân 501 đến 1000 (mất 6 tiếng).
+
+Sau đó gom 2 file Output lại làm Dataset chung.
+
+Lấy code tối ưu T4x2
+
+Có
+ok nghe được đó bây giờ planing số lượng ipynb cho bài này. đầy đủ eda để hiểu data. đi đầy đủ bước. dự án này coi như học. nên code ipynb sẽ như slide thuyết trình và có đầy đủ mô tả cũng như giải thích
+
+Tuyệt vời! Việc biến Jupyter Notebook thành một "bản thuyết trình tương tác" (Executable Presentation) là tiêu chuẩn cao nhất của một Data Scientist chuyên nghiệp. Khi mentor hoặc nhà tuyển dụng đọc Notebook của bạn, họ không chỉ thấy code chạy được, mà còn hiểu tư duy giải quyết vấn đề của bạn.
+
+Để dự án mang tính giáo dục, chuẩn khoa học và vượt qua giới hạn của Kaggle, toàn bộ dự án sẽ được chia thành 4 Notebooks. Dưới đây là blueprint (bản thiết kế) chi tiết cho từng file.
+
+Tổng quan Kiến trúc 4 Notebooks
+Thứ tự	Tên Notebook	Mục đích chính	Kaggle Input	Kaggle Output
+#1	01_TCGA_EDA_and_Storytelling.ipynb	Khám phá dữ liệu (EDA), trực quan hóa, giải thích bài toán Y khoa.	TCGA-BRCA Images + Clinical CSV	Không có (chỉ lưu biểu đồ)
+#2	02_CNN_Feature_Extraction.ipynb	Chạy ResNet50/T4x2, nén ảnh thành ma trận.	TCGA-BRCA Images	Kaggle Dataset mới chứa các file .pt
+#3	03_Attention_MIL_Training.ipynb	Xây dựng kiến trúc MIL, huấn luyện mô hình phân loại.	Dataset .pt (từ NB2) + Clinical CSV	Trọng số mô hình (best_model.pth)
+#4	04_Evaluation_and_XAI.ipynb	Đánh giá chỉ số (AUC, F1), vẽ Attention Heatmap giải thích.	Dataset .pt + best_model.pth + TCGA Images	Heatmaps, ROC Curves, Report
+Cấu trúc chi tiết (Markdown + Code) cho từng Notebook
+Notebook 1: Khám phá Dữ liệu (EDA & Data Understanding)
+Đóng vai trò là phần "Đặt vấn đề" trong slide thuyết trình.
+
+Markdown: Giới thiệu bộ dữ liệu TCGA-BRCA, định nghĩa WSI (Whole Slide Image) là gì và tại sao ung thư vú lại nguy hiểm. Giải thích lý do không thể dùng CNN thường mà phải dùng MIL (Ví dụ: "Một bức ảnh WSI giống như một bức tường khổng lồ, và tế bào ung thư chỉ là một vết nứt nhỏ").
+
+Code EDA Lâm sàng (Clinical):
+
+Đọc file .csv lâm sàng.
+
+Vẽ biểu đồ phân phối độ tuổi, tỷ lệ các loại Subtype (Imbalance check), biểu đồ thời gian sống sót (Kaplan-Meier curve).
+
+Code EDA Ảnh (Vision):
+
+Viết hàm load ngẫu nhiên 5 bệnh nhân.
+
+Với mỗi bệnh nhân, in ra lưới (grid) 4×4 các patch ảnh 256×256.
+
+Quan sát sự khác biệt bằng mắt thường giữa các mô dày đặc và mô mỡ, mô đệm.
+
+Notebook 2: Trích xuất Đặc trưng (Feature Extraction - Data Engineering)
+Đóng vai trò là phần "Phương pháp luận & Xử lý số liệu".
+
+Markdown: Giải thích cơ chế Transfer Learning. "Tại sao lại dùng ResNet50? ResNet50 đã học được các đường nét, hình khối từ hàng triệu ảnh tự nhiên (ImageNet). Chúng ta sẽ mượn 'con mắt' của nó để mã hóa từng mảnh tế bào thành một vector 1024 chiều". Giải thích cơ chế song song hóa (DataParallel) trên 2 card T4.
+
+Code:
+
+Định nghĩa Dataset và DataLoader (với num_workers=2, pin_memory=True).
+
+Load mô hình ResNet50, bỏ lớp Classifier cuối cùng, set model.eval().
+
+Vòng lặp tính toán: Tính thời gian chạy bằng tqdm.
+
+Lưu Tensor thành các file .pt và gom vào /kaggle/working/.
+
+Notebook 3: Xây dựng & Huấn luyện Attention-MIL (The Core AI)
+Đóng vai trò là "Trái tim" của toàn bộ dự án.
+
+Markdown: Trình bày toán học của Attention-MIL một cách dễ hiểu (có thể dùng công thức cơ bản). Giải thích cơ chế: "Mô hình không chỉ học cách dự đoán bệnh, mà còn học cách gán điểm số (trọng số chú ý) cho từng vùng ảnh. Vùng nào càng đáng ngờ, điểm càng cao".
+
+Code Data Split: Phân chia tập Train/Val/Test theo cấp độ Bệnh nhân (Patient-level split) để chống Data Leakage.
+
+Code Model: Định nghĩa class PyTorch cho mạng ABMIL (Gồm 3 khối: Feature Extractor -> Attention Pooling -> Classifier).
+
+Code Training Loop:
+
+Train mô hình qua các Epochs.
+
+Lưu lại Loss và Accuracy của Train/Val vào list.
+
+Lưu mô hình tốt nhất (torch.save(model.state_dict(), 'best_model.pth')) dựa trên Validation Loss.
+
+Vẽ biểu đồ Learning Curve (Loss Curve) để chứng minh mô hình đang hội tụ (không bị Overfitting hay Underfitting).
+
+Notebook 4: Đánh giá & Trí tuệ nhân tạo có thể giải thích (Evaluation & XAI)
+Đóng vai trò là "Kết luận & Hỗ trợ bác sĩ lâm sàng".
+
+Markdown: Nhấn mạnh tầm quan trọng của Explainable AI (XAI) trong y tế. "Bác sĩ không tin một cỗ máy chỉ nói 'Ung thư (99%)'. Họ cần biết cỗ máy nhìn vào đâu để kết luận như vậy".
+
+Code Đánh giá tổng thể:
+
+Load mô hình best_model.pth. Chạy inference trên tập Test (20% cất đi từ Notebook 3).
+
+Vẽ Ma trận nhầm lẫn (Confusion Matrix).
+
+In ra Classification Report (Precision, Recall, F1-Score).
+
+Vẽ đường cong ROC và tính chỉ số AUC.
+
+Code Trực quan hóa (Attention Heatmap):
+
+Chọn ngẫu nhiên 1 bệnh nhân ung thư dự đoán đúng (True Positive).
+
+Trích xuất mảng Attention Scores.
+
+Dùng OpenCV lồng màu (colormap như màu "JET" đỏ/xanh) đè lên các patch ảnh tương ứng của bệnh nhân đó để tạo ra Heatmap.
+
+Với thiết kế 4 Notebooks này, bạn muốn bắt tay vào code file nào trước tiên để tôi viết sẵn cấu trúc và code mẫu?
+
+Viết Notebook 1 (EDA)
+
+Viết Notebook 2 (Trích xuất đặc trưng)
+Chọn ngẫu nhiên 1 bệnh nhân ung thư dự đoán đúng (True Positive). ta sẽ dự đoán bao nhiêu loại nhãn hay dự đoán biến liên tục. tham khảo các paper
+
+Đây là một câu hỏi mang tính quyết định. Kiến trúc lớp cuối cùng (lớp Classifier) của mô hình MIL, hàm Loss, và toàn bộ các chỉ số đánh giá (Metrics) sẽ hoàn toàn phụ thuộc vào việc bạn chọn bài toán nào trong bước này.
+
+Dựa trên các bài báo kinh điển về WSI trên bộ TCGA-BRCA (như paper của CLAM - Lu et al., 2021 hoặc TransMIL - Shao et al., 2021), giới nghiên cứu thường thực hiện Dự đoán nhãn rời rạc (Classification) nhiều hơn là biến liên tục.
+
+Để phù hợp với yêu cầu thực tập của bạn (đo lường Accuracy, Precision, Recall, F1, AUC), bạn BẮT BUỘC phải chọn bài toán dự đoán nhãn rời rạc (Phân loại).
+
+Dưới đây là 3 hướng gán nhãn phổ biến nhất trên TCGA-BRCA, được sắp xếp từ dễ đến khó để bạn lựa chọn cho dự án:
+
+1. Phân loại Nhị phân (Binary Classification) - KHUYÊN DÙNG NHẤT
+Đây là bài toán chuẩn mực nhất, dễ cài đặt và phù hợp nhất cho dự án 2 tháng. Trong TCGA-BRCA, ung thư vú được chia thành 2 nhóm hình thái mô học chính:
+
+Nhãn 0 (Negative): Invasive Lobular Carcinoma (ILC - Ung thư biểu mô tiểu thùy xâm nhập). Chiếm khoảng 15-20% dữ liệu.
+
+Nhãn 1 (Positive): Invasive Ductal Carcinoma (IDC - Ung thư biểu mô ống xâm nhập). Chiếm khoảng 75-80% dữ liệu.
+
+Thiết kế mô hình: Lớp cuối cùng của mạng MIL sẽ là 1 nơ-ron với hàm kích hoạt Sigmoid (Output ra xác suất 0.0→1.0).
+
+Ý nghĩa của True Positive (TP) ở Notebook 4: Là khi bạn lấy ra 1 bệnh nhân thực chất bị IDC (Nhãn 1), và mô hình cũng dự đoán xác suất >0.5 (Dự đoán là 1). Khi đó, bạn vẽ Heatmap để xem mô hình đã nhìn vào các tế bào IDC nào để đưa ra quyết định.
+
+2. Phân loại Đa nhãn (Multi-class Classification)
+Bài toán này khó hơn, thường dùng để phân loại các phân nhóm phân tử (Molecular Subtypes) - vốn là tiêu chuẩn vàng để quyết định phác đồ điều trị ung thư vú.
+
+Số lượng nhãn (4 nhãn): Luminal A, Luminal B, HER2-enriched, và Basal-like.
+
+Thiết kế mô hình: Lớp cuối cùng sẽ có 4 nơ-ron với hàm kích hoạt Softmax (Output ra 4 xác suất cộng lại bằng 1).
+
+Lưu ý: Độ chính xác (Accuracy) cho bài toán này khi chỉ dùng ảnh WSI thường không cao (chỉ khoảng 70-75%), vì các phân nhóm này vốn được xác định bằng gen chứ không phải bằng hình thái ảnh.
+
+3. Dự đoán biến liên tục (Survival Analysis / Risk Score)
+Nhiều paper kết hợp phân tích thời gian sống sót (Survival Analysis).
+
+Output: Mô hình không dự đoán nhãn, mà dự đoán một biến liên tục (Risk Score - Điểm rủi ro tử vong).
+
+Hàm Loss: Dùng Cox Negative Log-Likelihood thay vì Cross Entropy.
+
+Tại sao KHÔNG nên chọn: Nếu làm bài toán này, bạn không thể tính toán Accuracy, F1-score hay Precision/Recall như syllabus thực tập yêu cầu. Bạn sẽ phải dùng một chỉ số hoàn toàn khác gọi là C-Index (Concordance Index). Nó sẽ làm chệch hướng yêu cầu của Giảng viên/Mentor.
+
+Kết luận cho dự án của bạn:
+Hãy chọn Bài toán 1: Phân loại nhị phân IDC vs. ILC.
+Bài toán này hoàn toàn đáp ứng được mọi tiêu chí của kỳ thực tập: Dùng được đầy đủ các chỉ số Accuracy/AUC/F1, vẽ được ma trận nhầm lẫn (Confusion Matrix), xuất được Attention Heatmap rõ ràng (TP, TN, FP, FN), và dữ liệu lâm sàng (.csv) của TCGA có sẵn hai nhãn này để bạn bóc tách.
+
+Bắt đầu với Notebook 1 (EDA) nhé?
+
+Có
+Phân loại Đa nhãn (Multi-class Classification)
+
+Bài toán này khó hơn, thường dùng để phân loại các phân nhóm phân tử (Molecular Subtypes) - vốn là tiêu chuẩn vàng để quyết định phác đồ điều trị ung thư vú.
+
+
+
+Số lượng nhãn (4 nhãn): Luminal A, Luminal B, HER2-enriched, và Basal-like.
+
+Thiết kế mô hình: Lớp cuối cùng sẽ có 4 nơ-ron với hàm kích hoạt Softmax (Output ra 4 xác suất cộng lại bằng 1).
+
+Lưu ý: Độ chính xác (Accuracy) cho bài toán này khi chỉ dùng ảnh WSI thường không cao (chỉ khoảng 70-75%), vì các phân nhóm này vốn được xác định bằng gen chứ không phải bằng hình thái ảnh.
+
+
+
+Cách 1: Stratified k-fold Cross Validation (Khuyên dùng cho paper)
+
+
+
+Thay vì chia cố định một lần, họ chia ngẫu nhiên danh sách bệnh nhân thành 3 hoặc 5 phần (3-fold hoặc 5-fold) có tỉ lệ nhãn bằng nhau (Stratified).
+
+Ví dụ (5-fold):
+
+80% Train & Val, 20% Test. Lặp lại việc này 5 lần để mọi bệnh nhân đều được test.
+
+
+
+
+
+tôi muốn chọn đề tài này, bây giờ plan lại các notebook
+
+Lựa chọn tuyệt vời! Đẩy độ khó lên Multi-class Classification (4 nhãn phân tử) kết hợp với Stratified 5-Fold Cross Validation sẽ biến đồ án thực tập của bạn thành một bài báo khoa học thực thụ. Mặc dù Accuracy có thể chỉ dừng ở mức 70-75% (đây là giới hạn sinh học vì hình thái tế bào không phản ánh 100% bản chất gen), nhưng điểm "ăn tiền" sẽ nằm ở phương pháp đánh giá vô cùng chặt chẽ của bạn.
+
+Việc thay đổi bài toán và cách chia dữ liệu sẽ làm thay đổi cấu trúc code, đặc biệt là ở Notebook 3 và 4. Dưới đây là bản thiết kế (Plan) đã được tinh chỉnh lại cho dự án của bạn:
+
+Tổng quan 4 Notebooks (Cập nhật cho Multi-class & 5-Fold CV)
+Tên Notebook	Sự thay đổi so với kế hoạch cũ
+#1: EDA & Storytelling	Tập trung bóc tách 4 nhãn phân tử (Luminal A, Luminal B, HER2, Basal) từ file CSV. Phân tích sự mất cân bằng dữ liệu (Class Imbalance - Luminal A thường chiếm đa số).
+#2: Feature Extraction	Không đổi. Vẫn dùng ResNet50 trích xuất patch thành vector .pt vì quá trình này độc lập với nhãn bệnh.
+#3: 5-Fold MIL Training	Thay đổi lớn. Code vòng lặp 5-Fold. Đổi kiến trúc lớp cuối thành 4 nơ-ron (Softmax). Dùng CrossEntropyLoss.
+#4: Multi-class Eval & XAI	Thay đổi lớn. Tính Macro-F1, vẽ Ma trận nhầm lẫn 4×4, và biểu đồ ROC-AUC theo kiểu One-vs-Rest (OvR).
+Chi tiết thay đổi thuật toán trong từng Notebook
+Notebook 1: EDA & Phân tích mất cân bằng
+Mục tiêu mới: Bạn phải gộp các cột dữ liệu lâm sàng (Clinical data) để tạo ra cột nhãn Molecular_Subtype.
+
+Xử lý Imbalance: Dữ liệu TCGA-BRCA thường phân bố rất lệch (ví dụ: Luminal A ~50%, Basal ~20%, Luminal B ~15%, HER2 ~15%). Trong file này, bạn cần vẽ biểu đồ tròn (Pie chart) hoặc cột (Bar chart) để show sự mất cân bằng này, làm tiền đề để biện luận cho việc dùng Stratified K-Fold và Macro-F1 ở các bước sau.
+
+Notebook 2: Trích xuất Đặc trưng (Giữ nguyên)
+Nhiệm vụ: Vẫn chạy mô hình ResNet50 để nén toàn bộ ảnh WSI thành các file .pt lưu vào /kaggle/working/. Bước này chỉ cần làm 1 lần, không liên quan đến nhãn.
+
+Notebook 3: Huấn luyện 5-Fold Cross Validation (Thử thách Code)
+Đây là Notebook phức tạp nhất. Thay vì chia Train/Val/Test một lần, bạn sẽ dùng thư viện StratifiedKFold của scikit-learn để code một quy trình lặp:
+
+1
+Chia 5 Folds
+Stratified đảm bảo tỉ lệ nhãn
+Hệ thống trộn và chia danh sách bệnh nhân thành 5 phần (mỗi phần 20%). Tỉ lệ Luminal A, B, HER2, Basal trong mỗi phần đều giống hệt tỉ lệ của toàn bộ tập dữ liệu.
+
+2
+Vòng lặp Fold 1
+Lấy Fold 1 làm tập Test (20%). Gom Fold 2,3,4,5 làm tập Train & Validation (80%). Khởi tạo mô hình MIL mới hoàn toàn. Huấn luyện và ghi nhận kết quả dự đoán trên Fold 1.
+
+3
+Lặp lại cho Fold 2 đến Fold 5
+Cuốn chiếu lần lượt: Lấy Fold 2 làm Test, train trên các Fold còn lại... Lặp lại cho đến khi toàn bộ 1000 bệnh nhân đều đã được làm tập Test đúng 1 lần.
+
+4
+Lưu kết quả
+Lưu lại danh sách nhãn thực tế (True Labels) và xác suất dự đoán (Predicted Probabilities) của tất cả bệnh nhân từ 5 Folds ra một file cv_results.csv để mang sang Notebook 4 đánh giá. Lưuvà chọn ra trọng số (weights) của Fold có kết quả tốt nhất.
+
+Cảnh báo Kaggle: Chạy 5-Fold nghĩa là bạn phải train mô hình 5 lần. Tuy mạng MIL chạy trên input Tensors .pt khá nhanh, nhưng bạn vẫn cần in log thời gian (tqdm) cẩn thận để đảm bảo Kernel không vượt quá 12 tiếng.
+
+Notebook 4: Đánh giá Đa nhãn & Explainable AI
+Chỉ số Đánh giá Đa nhãn:
+
+Confusion Matrix: Thay vì ma trận 2×2, bạn sẽ vẽ ma trận 4×4. Đường chéo chính là số ca dự đoán đúng cho từng Subtype.
+
+Macro-F1 Score: Vì dữ liệu mất cân bằng, Accuracy sẽ bị ảo (mô hình cứ đoán Luminal A là tự động được 50% Accuracy). Macro-F1 sẽ tính điểm trung bình bình đẳng cho cả 4 nhãn, phản ánh đúng sức mạnh thực sự của mô hình.
+
+ROC-AUC (One-vs-Rest): Vẽ 4 đường cong ROC trên cùng 1 biểu đồ (ví dụ: Luminal A so với phần còn lại, HER2 so với phần còn lại).
+
+Attention Heatmap cho Multi-class: Mô hình sẽ tập trung vào các đặc trưng hình thái khác nhau tùy thuộc vào dự đoán. Bạn sẽ code để bốc ngẫu nhiên 4 bệnh nhân (mỗi người thuộc 1 Subtype dự đoán đúng) và vẽ 4 Heatmap đặt cạnh nhau để so sánh.
+
+Bắt đầu thiết kế Notebook 1
+
+Có
+research xem đã có paper nào làm y hệt đề tài này chưa
+
+Câu trả lời ngắn gọn là: CÓ, đã có những paper nghiên cứu làm chính xác 100% đề tài mà chúng ta vừa vạch ra.
+
+Thực tế, việc dự đoán 4 phân nhóm phân tử (Luminal A, Luminal B, HER2-enriched, Basal-like) từ ảnh WSI trên bộ dữ liệu TCGA-BRCA bằng Multiple Instance Learning (MIL) là một bài toán Benchmark (Chuẩn mực) rất nổi tiếng trong lĩnh vực Computational Pathology (Bệnh học tính toán) [cite: 1.3.2].
+
+Vì đây là dự án thực tập, việc bạn làm lại (reproduce) một đề tài đã có paper công bố là điều cực kỳ tốt. Nó giúp bạn có baseline (kết quả gốc) để đối chiếu xem code của mình chạy có đúng không, đồng thời có sẵn tài liệu tham khảo chất lượng cao để trích dẫn vào báo cáo.
+
+Dưới đây là 3 Paper nổi bật nhất làm y hệt đề tài của bạn (Bạn hãy lưu lại để đưa vào phần Tài liệu tham khảo của báo cáo):
+
+1. Paper dùng y hệt Attention-MIL (Giống Notebook 3 của bạn)
+Tên Paper: "Molecular Subtype Prediction for Breast Cancer Using H&E Specialized Backbone" (Abbasi-Sureshjani et al., 2021) [cite: 1.1.3].
+
+Họ đã làm gì: Họ sử dụng ảnh WSI của TCGA-BRCA [cite: 1.1.3]. Họ dùng một mạng CNN trích xuất đặc trưng (patch embedding), sau đó đưa vào mạng Attention-based MIL để dự đoán các phân nhóm phân tử (Molecular subtyping) [cite: 1.1.3].  
+ResearchGate
+
+Điểm giống dự án của bạn: Kiến trúc mô hình hoàn toàn trùng khớp với những gì bạn sẽ code ở Notebook 2 và Notebook 3.
+
+2. Paper đặt nền móng cho việc phân loại 4 nhãn phân tử
+Tên Paper: "A deep learning image-based intrinsic molecular subtype classifier of breast tumors reveals tumor heterogeneity that may affect survival" (Jaber et al., 2020 - Đăng trên Nature Breast Cancer) [cite: 1.3.2].  
+PMC - NIH
+
+Họ đã làm gì: Huấn luyện mô hình Deep Learning phân loại ảnh WSI thành 4 nhãn: Basal-like, HER2-enriched, Luminal A và Luminal B [cite: 1.3.2]. Họ phát hiện ra rằng, những bệnh nhân bị dự đoán nhầm (hoặc mô hình lưỡng lự) thực chất là do khối u của họ có tính dị đồng nhất (chứa cả tế bào Luminal A và Basal) [cite: 1.3.2].
+
+Khớp với dự án của bạn: Củng cố ý tưởng ở Notebook 4 của bạn: Dùng Heatmap và XAI để giải thích tại sao mô hình dự đoán nhầm.
+
+3. Paper đạt SOTA (State-of-the-Art) gần đây
+Tên Paper đề cập: Các nghiên cứu như của Liu et al. (được trích dẫn trong các bài báo năm gần đây) [cite: 1.2.2].  
+ResearchGate
+
+Họ đã làm gì: Sử dụng Gated Attention MIL kết hợp Contrastive Learning (Self-supervised) trên dữ liệu TCGA-BRCA [cite: 1.2.2]. Họ đạt được ROC-AUC trung bình khoảng 0.88 cho bài toán phân loại cả 4 phân nhóm phân tử [cite: 1.2.2].
+
+Khớp với dự án của bạn: Đây chính là con số mục tiêu. Nếu code mô hình Attention-MIL + ResNet50 của bạn đạt được ROC-AUC từ 0.75→0.85, bạn đã hoàn thành xuất sắc dự án thực tập.
+
+🔥 Đánh giá về lựa chọn đề tài này cho Thực tập:
+Tính an toàn: Đã có paper làm rồi nghĩa là bài toán khả thi. Bạn không sợ rủi ro code xong mô hình không học được gì (Accuracy = 25% như đoán mò).
+
+Tính đột phá: Tuy đã có người làm, nhưng việc tự setup được một Pipeline 4 bước chạy mượt mà trên Kaggle T4x2 (chia theo 5-Fold Stratified) đòi hỏi kỹ năng Data Engineering và PyTorch rất cứng. Mentor/Giảng viên của bạn sẽ đánh giá phần Code và Tư duy hệ thống cao hơn là việc bạn cố tạo ra một mô hình mới chưa ai từng nghĩ tới.
+
+Cách làm cho báo cáo của bạn khác biệt: Dù reproduce, nhưng ở Notebook 4 (XAI), thay vì chỉ báo cáo con số, bạn hãy in ra các tấm ảnh Heatmap đẹp mắt, đặt cạnh ảnh mô thực tế và phân tích như một bác sĩ. Đó là điểm cộng tuyệt đối cho kỳ thực tập.
+
+Bạn đã tự tin với đề tài này chưa? Nếu rồi, chúng ta sẽ bắt tay ngay vào Notebook 1: EDA và bóc tách nhãn từ file CSV nhé!
+
+4 notebook chưa đủ, ta cần plan theo Các kỹ thuật xử lý ảnh y khoa và phân tích dữ liệu sức khỏe.
+
+Mô hình CNN, LSTM và Transformer trong chẩn đoán bệnh và dự báo tình trạng sức khỏe.
+
+Các chỉ số đánh giá mô hình như Accuracy, Precision, Recall, F1-score và AUC - chỉ số chuẩn khác vẫn chấp nhận.
+
+Xu hướng ứng dụng AI trong hỗ trợ quyết định lâm sàng và y tế thông minh.
+
+Nội dung Thực hành
+
+Thu thập và tiền xử lý dữ liệu ảnh y khoa hoặc dữ liệu sức khỏe từ các nguồn công khai.
+
+
+
+Xây dựng mô hình AI để phát hiện hoặc phân loại bệnh từ ảnh y tế (X-quang, CT, MRI, da liễu,...).
+
+Phát triển hệ thống dự báo hoặc theo dõi sức khỏe dựa trên dữ liệu bệnh nhân.
+
+Đánh giá hiệu năng mô hình bằng các chỉ số thực nghiệm.
+
+So sánh kết quả với các phương pháp truyền thống và đề xuất giải pháp cải thiện độ chính xác.
+
+Bạn có một tư duy phân tích đề cương rất sắc sảo! Để đạt điểm tuyệt đối cho kỳ thực tập, báo cáo của bạn phải "tick" (đánh dấu) đủ 100% các gạch đầu dòng trong đề cương (Syllabus) mà nhà trường/cơ quan yêu cầu. Việc thiết kế thiếu LSTM, Transformer hay phần so sánh truyền thống sẽ làm bạn bị mất điểm.
+
+Để bao phủ toàn bộ các kỹ thuật (CNN, LSTM, Transformer), các hệ thống (chẩn đoán ảnh, dự báo sức khỏe bệnh nhân) và đánh giá (AUC, F1, So sánh truyền thống, Hỗ trợ lâm sàng), chúng ta sẽ mở rộng dự án thành Hệ sinh thái 6 Notebooks.
+
+Dự án bây giờ mang tên: "Hệ thống AI Đa phương thức: Chẩn đoán Nhóm phân tử và Dự báo Sinh tồn Ung thư Vú" (Multimodal AI System for Breast Cancer Subtyping and Survival Prediction).
+
+Dưới đây là Kế hoạch (Master Plan) được thiết kế đo ni đóng giày cho từng gạch đầu dòng của bạn:
+
+MAPPING ĐỀ CƯƠNG THỰC TẬP VÀO 6 NOTEBOOKS
+📘 Notebook 1: Thu thập, Tiền xử lý và EDA Dữ liệu Y tế
+Đáp ứng: "Thu thập và tiền xử lý dữ liệu ảnh y khoa hoặc dữ liệu sức khỏe từ các nguồn công khai."
+
+Dữ liệu ảnh Y khoa: Lấy tập TCGA-BRCA WSI patches từ Kaggle. Code kỹ thuật loại bỏ nhiễu, chuẩn hóa màu sắc (Macenko stain normalization) - kỹ thuật xử lý ảnh y khoa chuẩn.
+
+Dữ liệu Bệnh nhân: Load file CSV lâm sàng (Clinical data). Tiền xử lý các cột bị thiếu (missing values), chuẩn hóa các trường thông tin (Tuổi, Giai đoạn bệnh, Thời gian sống sót).
+
+📘 Notebook 2: Kỹ thuật xử lý ảnh & Trích xuất đặc trưng bằng CNN
+Đáp ứng: "Các kỹ thuật xử lý ảnh y khoa", "Mô hình CNN", "Xây dựng mô hình AI để phát hiện hoặc phân loại bệnh từ ảnh y tế".
+
+Sử dụng mô hình CNN (ResNet50) đã pre-trained để đóng vai trò là "Kỹ thuật trích xuất đặc trưng hình thái tế bào".
+
+Biến hàng triệu ảnh patches thành ma trận số (Tensors) để tiết kiệm tài nguyên Kaggle.
+
+Xây dựng Baseline Truyền thống: Ở cuối Notebook, xây dựng một mô hình Machine Learning truyền thống (như Random Forest hoặc SVM) chạy trên các vector đặc trưng này (bằng cách lấy trung bình - Mean Pooling) để làm mốc so sánh (Baseline).
+
+📘 Notebook 3: Hệ thống chẩn đoán bằng Transformer (TransMIL)
+Đáp ứng: "Mô hình Transformer trong chẩn đoán bệnh".
+
+Sử dụng mạng Transformer (Cụ thể là kiến trúc TransMIL) để làm bài toán Phân loại 4 nhóm phân tử (Luminal A, B, HER2, Basal).
+
+Lý do dùng Transformer: Các patch tế bào ung thư không nằm độc lập mà có tính không gian. Attention của Transformer sẽ học được mối quan hệ giữa một cụm tế bào ở góc này với cụm tế bào ở góc kia của khối u.
+
+📘 Notebook 4: Hệ thống dự báo tình trạng sức khỏe bằng LSTM
+Đáp ứng: "Mô hình LSTM... dự báo tình trạng sức khỏe", "Phát triển hệ thống dự báo hoặc theo dõi sức khỏe dựa trên dữ liệu bệnh nhân".
+
+Đây là một bài toán riêng biệt nhưng dùng chung data: Dự đoán thời gian sống sót (Survival Analysis / Prognosis).
+
+Lý do dùng LSTM: Cấu trúc tế bào thay đổi liên tục. Ta coi tập hợp các patch của 1 bệnh nhân như một "chuỗi" (sequence), kết hợp với dữ liệu lâm sàng (tuổi, giai đoạn). Mạng LSTM (Long Short-Term Memory) sẽ đọc chuỗi thông tin này để dự đoán: "Bệnh nhân này thuộc nhóm nguy cơ cao (thời gian sống < 5 năm) hay nguy cơ thấp?". Điều này đáp ứng chính xác yêu cầu "dự báo tình trạng sức khỏe".
+
+📘 Notebook 5: Đánh giá Hiệu năng & So sánh các phương pháp
+Đáp ứng: "Các chỉ số đánh giá mô hình như Accuracy, Precision, Recall, F1-score và AUC", "So sánh kết quả với các phương pháp truyền thống và đề xuất giải pháp".
+
+Viết các hàm tính toán scikit-learn cho: Accuracy, Macro-Precision, Macro-Recall, Macro-F1, và ROC-AUC.
+
+So sánh chéo (Benchmarking):
+
+Lập bảng so sánh kết quả chẩn đoán bệnh: Random Forest (Truyền thống) vs. CNN-MeanPooling vs. Transformer (TransMIL).
+
+So sánh dự báo sức khỏe: Phân tích sống sót Kaplan-Meier truyền thống (Cox-PH) vs. LSTM.
+
+Đề xuất cải thiện: Viết Markdown đề xuất các phương pháp như thu thập thêm data, dùng Self-Supervised Learning, v.v.
+
+📘 Notebook 6: AI Hỗ trợ Quyết định Lâm sàng & XAI
+Đáp ứng: "Xu hướng ứng dụng AI trong hỗ trợ quyết định lâm sàng và y tế thông minh".
+
+Một hệ thống Y tế Thông minh không thể là "Hộp đen" (Black-box).
+
+Notebook này dùng mã code trích xuất Attention Heatmap từ mô hình Transformer ở NB3. Vẽ các mảng màu đỏ/xanh đè lên ảnh WSI gốc để chỉ cho bác sĩ thấy: "Hệ thống AI cảnh báo vùng này chứa tế bào ác tính mang đặc tính của nhóm HER2".
+
+Trình bày giao diện trực quan hóa (tưởng tượng hệ thống CDS trên thực tế).
+
+Kế hoạch hành động 8 tuần (Timeline) cho 6 Notebooks:
+Tuần 1: Hoàn thành Notebook 1 (Hiểu dữ liệu, làm sạch, EDA).
+
+Tuần 2: Hoàn thành Notebook 2 (Chạy ResNet50 trích xuất vector Tensors) & Train mô hình Random Forest (Truyền thống).
+
+Tuần 3 & 4: Tập trung code và huấn luyện Notebook 3 (TransMIL - chẩn đoán bệnh bằng Transformer).
+
+Tuần 5: Phát triển Notebook 4 (Hệ thống dự báo sức khỏe bằng LSTM).
+
+Tuần 6: Viết Notebook 5 (Tổng hợp tất cả các dự đoán, vẽ biểu đồ ROC, tính F1, lập bảng so sánh với phương pháp truyền thống).
+
+Tuần 7: Code Notebook 6 (Heatmap - Ứng dụng CDS).
+
+Tuần 8: Chỉnh sửa Markdown các Notebook cho giống một bài thuyết trình. Viết báo cáo tổng kết thực tập dựa trên kết quả đã chạy.
+
+Bằng cách phân chia theo cấu trúc này, Mentor của bạn khi chấm bài sẽ thấy: Bạn không chỉ code AI một cách máy móc, mà bạn làm chủ toàn bộ quy trình MLOps trong Y tế (từ data, baseline truyền thống, CNN, Chuỗi thời gian LSTM, đến Transformer tiên tiến và cuối cùng là Khả năng giải thích mô hình cho bác sĩ).
+
+Bạn có muốn tôi bắt đầu cung cấp cấu trúc chi tiết (Code snippets & Markdown outline) cho Notebook 1 (Thu thập, Tiền xử lý, EDA Data Ảnh & Lâm sàng) ngay bây giờ không?

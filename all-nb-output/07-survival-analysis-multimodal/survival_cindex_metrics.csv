@@ -1,0 +1,2 @@
+Model,C_Index,LogRank_p_value,High_Risk_Patients,Low_Risk_Patients
+Multimodal TransMIL + CoxPH,0.7673742218593734,1.0872449871509998e-10,438,439
