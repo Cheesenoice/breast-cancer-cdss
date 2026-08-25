@@ -220,10 +220,13 @@ with st.sidebar:
 # 1. Load 24 real biopsy patches (dynamically slices real tissue from SVS if needed)
 patient_patches = load_patient_patches(BASE_DIR, selected_pid, max_patches=24, svs_path=external_svs_path)
 
-# 2. Extract vision features in real-time with ResNet50 (or load cached .pt if in standard demo)
+# 2. Extract vision features in real-time with ResNet50 (cached in session_state for instant tab switching)
+cache_key = f"{selected_pid}_resnet_features"
 if is_external_mode or not os.path.exists(os.path.join(BASE_DIR, 'data', 'wsi_pt', f"{selected_pid}.pt")):
-    with st.spinner("Đang chạy mạng ResNet50 trích xuất vector 2048D từ các ô mô học SVS..."):
-        wsi_source = extract_resnet50_features_from_patches([p[0] for p in patient_patches], models['resnet'])
+    if cache_key not in st.session_state:
+        with st.spinner("Đang chạy mạng ResNet50 trích xuất vector 2048D từ các ô mô học SVS..."):
+            st.session_state[cache_key] = extract_resnet50_features_from_patches([p[0] for p in patient_patches], models['resnet'])
+    wsi_source = st.session_state[cache_key]
 else:
     pt_file = os.path.join(BASE_DIR, 'data', 'wsi_pt', f"{selected_pid}.pt")
     wsi_source = pt_file
