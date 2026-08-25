@@ -424,8 +424,8 @@ with tab2:
     -  **Viền Xanh (Attention Thấp):** Vùng mô đệm, mô mỡ hoặc chất nền liên kết bình thường.
     """)
     
-    # Load 24 patches for the grid
-    patient_patches = load_patient_patches(BASE_DIR, selected_pid, max_patches=24)
+    # Load 24 patches for the grid (dynamically slices real tissue from SVS if needed)
+    patient_patches = load_patient_patches(BASE_DIR, selected_pid, max_patches=24, svs_path=external_svs_path)
     
     # Render 4x6 grid
     num_cols = 6
