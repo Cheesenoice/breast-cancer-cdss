@@ -26,7 +26,13 @@ from model_utils import (
 )
 from survival_utils import compute_survival_prognosis
 from xai_utils import compute_gene_integrated_gradients, create_biomarker_radar_chart
-from wsi_utils import load_patient_patches, get_attention_border_color, get_available_svs_slides
+from wsi_utils import (
+    load_patient_patches,
+    get_attention_border_color,
+    get_available_svs_slides,
+    read_svs_thumbnail,
+    extract_svs_metadata
+)
 
 # =========================================================================
 # 1. STREAMLIT APP CONFIGURATION & STYLING
@@ -430,7 +436,6 @@ with tab2:
             matched_svs = [s for s in svs_slides if s['filename'] == clean_filename][0]
             
             # Extract metadata
-            from wsi_utils import read_svs_thumbnail, extract_svs_metadata
             svs_meta = extract_svs_metadata(matched_svs['path'])
             
             st.markdown(f"""
