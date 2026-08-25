@@ -267,10 +267,13 @@ def run_transmil_inference(model, img_source, gen_vector):
             
     if isinstance(gen_vector, torch.Tensor):
         gen_tensor = gen_vector.to(device)
-        if gen_tensor.ndim == 1:
-            gen_tensor = gen_tensor.unsqueeze(0)
     else:
-        gen_tensor = torch.tensor(gen_vector, dtype=torch.float32).unsqueeze(0).to(device)
+        gen_tensor = torch.tensor(gen_vector, dtype=torch.float32).to(device)
+        
+    while gen_tensor.ndim < 2:
+        gen_tensor = gen_tensor.unsqueeze(0)
+    while gen_tensor.ndim > 2:
+        gen_tensor = gen_tensor.squeeze(1)
     
     with torch.no_grad():
         logits, v_fusion, v_img, v_gen, patch_embeds = model(img_tensor, gen_tensor)
@@ -300,7 +303,7 @@ def run_transmil_inference(model, img_source, gen_vector):
 def preprocess_raw_20k_rna(df_raw, top_500_genes, scaler):
     """
     Takes a 1-row DataFrame of ~20k raw RSEM gene counts, extracts Top 500 genes,
-    applies log2(x+1), and standard-scales with pre-fitted Scaler.
+    and standard-scales with the pre-fitted cohort Scaler (Z-Score).
     Returns:
         scaled_vector (np.ndarray of shape (500,)), scaled_series (pd.Series)
     """
@@ -316,9 +319,8 @@ def preprocess_raw_20k_rna(df_raw, top_500_genes, scaler):
             except Exception:
                 raw_500[0, i] = 0.0
                 
-    log2_500 = np.log2(raw_500 + 1.0)
-    df_log2 = pd.DataFrame(log2_500, columns=top_500_genes)
-    scaled_500 = scaler.transform(df_log2)
+    df_500 = pd.DataFrame(raw_500, columns=top_500_genes)
+    scaled_500 = scaler.transform(df_500)
     return scaled_500[0], pd.Series(scaled_500[0], index=top_500_genes)
 
 

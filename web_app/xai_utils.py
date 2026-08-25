@@ -28,10 +28,13 @@ def compute_gene_integrated_gradients(model, img_source, gen_vector, target_clas
             
     if isinstance(gen_vector, torch.Tensor):
         gen_tensor = gen_vector.to(device)
-        if gen_tensor.ndim == 1:
-            gen_tensor = gen_tensor.unsqueeze(0)
     else:
-        gen_tensor = torch.tensor(gen_vector, dtype=torch.float32).unsqueeze(0).to(device)
+        gen_tensor = torch.tensor(gen_vector, dtype=torch.float32).to(device)
+        
+    while gen_tensor.ndim < 2:
+        gen_tensor = gen_tensor.unsqueeze(0)
+    while gen_tensor.ndim > 2:
+        gen_tensor = gen_tensor.squeeze(1)
     
     # Baseline is zero vector (average expression after standard scaling)
     baseline_gen = torch.zeros_like(gen_tensor)

@@ -128,29 +128,49 @@ with st.sidebar:
         
         # Option to pick from ready slides or upload
         ext_options = [f"{p['patient_id']} - {p['svs_filename'][:30]}..." for p in external_pairs]
+        selected_pair_pid = None
         if ext_options:
             selected_ext_str = st.selectbox("Chọn Cặp SVS + 20k Gen Có Sẵn:", ext_options, index=0)
             matched_pair = [p for p in external_pairs if p['patient_id'] in selected_ext_str][0]
-            selected_pid = matched_pair['patient_id']
+            selected_pair_pid = matched_pair['patient_id']
+            selected_pid = selected_pair_pid
             external_svs_path = matched_pair['svs_path']
             
             # Read and process the 20k RNA-Seq CSV in real-time
             if matched_pair['has_rna']:
                 df_ext_raw = pd.read_csv(matched_pair['csv_path'], index_col=0)
                 custom_gen_vector, custom_gen_series = preprocess_raw_20k_rna(df_ext_raw, top_500_genes, models['scaler'])
-                st.success(f"Đã nạp & tiền xử lý 20,518 gen cho {selected_pid} trong 0.3s!")
         else:
             selected_pid = "TCGA-EXT-DEMO"
             
         # Also allow custom uploaders
-        with st.expander("Tùy Chọn Tải Lên File Khác"):
-            up_svs = st.file_uploader("Tải file .svs mới:", type=['svs', 'tif', 'png', 'jpg'])
-            up_rna = st.file_uploader("Tải file .csv 20k gen mới:", type=['csv', 'txt'])
+        with st.expander("Tùy Chọn Kéo Thả File Mới (.svs & .csv)"):
+            up_svs = st.file_uploader("1. Tải file .svs mới:", type=['svs', 'tif', 'png', 'jpg'])
+            up_rna = st.file_uploader("2. Tải file .csv 20k gen mới:", type=['csv', 'txt'])
+            
+            if up_svs is not None:
+                upload_dir = os.path.join(BASE_DIR, 'data', 'raw_svs', 'uploaded')
+                os.makedirs(upload_dir, exist_ok=True)
+                save_path = os.path.join(upload_dir, up_svs.name)
+                with open(save_path, 'wb') as f:
+                    f.write(up_svs.getbuffer())
+                external_svs_path = save_path
+                
+                # Extract PID from SVS filename
+                import re
+                m = re.search(r'(TCGA-[A-Z0-9]{2}-[A-Z0-9]{4})', up_svs.name)
+                if m:
+                    selected_pid = m.group(1)
+                st.session_state.pop(f"{selected_pid}_resnet_features", None)
+                st.success(f"Đã nạp file SVS tải lên: {up_svs.name}")
+                
             if up_rna is not None:
                 df_custom_raw = pd.read_csv(up_rna, index_col=0)
                 custom_gen_vector, custom_gen_series = preprocess_raw_20k_rna(df_custom_raw, top_500_genes, models['scaler'])
-                selected_pid = str(df_custom_raw.index[0]) if len(df_custom_raw.index) > 0 else "CUSTOM-CASE"
-                st.success(f"Đã xử lý 20k gen từ file tải lên ({up_rna.name})!")
+                raw_idx = str(df_custom_raw.index[0])
+                if raw_idx.startswith('TCGA-'):
+                    selected_pid = raw_idx
+                st.success(f"Đã nạp & tiền xử lý 20,518 gen từ file ({up_rna.name})!")
 
     # Get clinical info
     clin_match = df_clin[df_clin['patientId'] == selected_pid]
@@ -166,7 +186,7 @@ with st.sidebar:
         patient_stage = "Stage II"
         patient_surv = 36.0
         patient_censored = 1
-        true_pam50 = "Chưa rõ (Ngoại viện)"
+        true_pam50 = "Chưa rõ (Ca ngoại viện)"
 
     badge_text = "Ngoại Viện 20k Gen" if is_external_mode else "ID Khớp"
 
@@ -198,7 +218,7 @@ with st.sidebar:
             </div>
         </div>
         <div style='margin-top:12px; font-size:12px; color:#475569;'>
-            <b>Nhãn Giải Phẫu Bệnh:</b> <span style='font-weight:700; color:#0284c7;'>{SUBTYPE_KEY_MAP.get(true_pam50, true_pam50)}</span>
+            <b>Hồ Sơ Bệnh Án Gốc (Ground Truth):</b> <span style='font-weight:700; color:#0284c7;'>{SUBTYPE_KEY_MAP.get(true_pam50, true_pam50)}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
