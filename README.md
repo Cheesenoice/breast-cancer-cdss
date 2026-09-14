@@ -91,11 +91,17 @@ The primary production model integrates both modalities via late feature fusion:
 [ RNA-Seq: 500D Vector ]   ────► Genomics MLP      ────► 512D Latent Vector ──┘
 ```
 
-1. **Vision Stream:** $\text{TransMIL}(\mathbf{X}_{\text{WSI}}) \to \mathbf{v}_{\text{img}} \in \mathbb{R}^{512}$
-2. **Genomics Stream:** Multi-Layer Perceptron (Dense $500 \to 256$, LayerNorm, ReLU, Dropout 0.3, Dense $256 \to 512$, ReLU) $\to \mathbf{v}_{\text{gen}} \in \mathbb{R}^{512}$
-3. **Multimodal Fusion Layer:**
+1. **Vision Stream:** TransMIL vision network processing the bag of $N$ patch embeddings:
+   $$\mathbf{v}_{\text{img}} = \text{TransMIL}(\mathbf{X}) \in \mathbb{R}^{512}$$
+
+2. **Genomics Stream:** Multi-Layer Perceptron (Dense 500 $\to$ 256, LayerNorm, ReLU, Dropout 0.3, Dense 256 $\to$ 512, ReLU) processing the 500-gene profile:
+   $$\mathbf{v}_{\text{gen}} = \text{MLP}(\mathbf{x}) \in \mathbb{R}^{512}$$
+
+3. **Multimodal Fusion Layer:** Direct concatenation of histological and transcriptomic embeddings:
    $$\mathbf{v}_{\text{fusion}} = [\mathbf{v}_{\text{img}} \,\|\, \mathbf{v}_{\text{gen}}] \in \mathbb{R}^{1024}$$
-4. **Classification Head:** Dense $1024 \to 256$, ReLU, Dropout 0.3, Dense $256 \to 4$ (Softmax).
+
+4. **Classification Head:** Dense 1024 $\to$ 256, ReLU, Dropout 0.3, Dense 256 $\to$ 4 (Softmax).
+
 5. **Loss Function:** Label-smoothed Cross-Entropy with class weighting to penalize minority-class misclassifications (HER2-enriched and Basal-like).
 
 #### 3.3. Phase 3: BiLSTM Multimodal Comparison
