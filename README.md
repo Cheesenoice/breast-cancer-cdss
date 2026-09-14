@@ -64,7 +64,7 @@ Patients were subjected to strict multi-omic matching criteria:
 | **Histological Type** | Infiltrating Ductal Carcinoma (IDC): 78.4% (741)<br>Infiltrating Lobular Carcinoma (ILC): 18.2% (172)<br>Mixed / Other: 3.4% (32) | Pathological morphology stratification |
 | **Overall Survival (OS)** | Median follow-up: 28.5 months (range: 0.1 – 282.7 months) | Right-censored time-to-event outcome |
 | **Vital Status / Censoring** | Censored (Alive): 85.2% (805)<br>Events (Deceased): 14.8% (140) | Standard TCGA long-term survival censoring profile |
-| **PAM50 Ground Truth** | LumA: 499 (52.8%) \| LumB: 197 (20.8%) \| Basal: 171 (18.1%) \| Her2: 78 (8.3%) | Significant 4-class imbalance reflecting natural biology |
+| **PAM50 Ground Truth** | LumA: 499 (52.8%) • LumB: 197 (20.8%) • Basal: 171 (18.1%) • Her2: 78 (8.3%) | Significant 4-class imbalance reflecting natural biology |
 
 ---
 
@@ -114,16 +114,16 @@ The research progression spans 22 standalone notebooks systematically numbered a
 Diagnostic Whole Slide Images in Aperio `.svs` format represent gigapixel tissue matrices (typically 80,000 x 60,000 pixels at 40x optical magnification). Direct end-to-end convolutional training is computationally intractable on modern GPUs.
 
 ##### Step 1: Otsu Tissue-Background Segmentation
-The thumbnail image is transformed from RGB to the HSV color space. Tissue regions exhibit higher Saturation (`S`) than transparent glass slides. The optimal threshold `tau` maximizes inter-class variance:
+The thumbnail image is transformed from RGB to the HSV color space. Tissue regions exhibit higher Saturation ($S$) than transparent glass slides. The optimal threshold $\tau$ maximizes inter-class variance:
 
 $$
 \sigma_B^2(\tau) = \omega_0(\tau)\omega_1(\tau)\left[\mu_0(\tau) - \mu_1(\tau)\right]^2
 $$
 
-Generating a binary foreground mask `M(x, y) in {0, 1}`.
+Generating a binary foreground mask $M(x, y) \in \{0, 1\}$.
 
 ##### Step 2: Patch Extraction & Artifact Filtering
-Non-overlapping tiles of dimension 256 x 256 pixels are extracted across the foreground mask at 20x optical magnification. A candidate tile `P_k` is retained if and only if it satisfies both cellularity and texture variance criteria:
+Non-overlapping tiles of dimension 256 x 256 pixels are extracted across the foreground mask at 20x optical magnification. A candidate tile $P_k$ is retained if and only if it satisfies both cellularity and texture variance criteria:
 
 $$
 \frac{1}{256^2} \sum_{(x,y) \in P_k} M(x, y) \ge 0.40 \quad \text{and} \quad \text{std}(P_k) \ge 10.0
@@ -132,7 +132,7 @@ $$
 This dual criterion filters out empty glass, mounting resin, folded edges, and acellular adipose bubbles.
 
 ##### Step 3: Feature Encoding via ResNet-50 Backbone
-Retained patches are normalized using ImageNet channel parameters (`mean = [0.485, 0.456, 0.406]`, `std = [0.229, 0.224, 0.225]`) and forwarded through a pretrained **ResNet-50** backbone truncated after the global average pooling layer (`AdaptiveAvgPool2d`). The entire patient biopsy is represented as a permutation-invariant bag of `N` embedding vectors:
+Retained patches are normalized using ImageNet channel parameters (mean = `[0.485, 0.456, 0.406]`, std = `[0.229, 0.224, 0.225]`) and forwarded through a pretrained **ResNet-50** backbone truncated after the global average pooling layer (`AdaptiveAvgPool2d`). The entire patient biopsy is represented as a permutation-invariant bag of $N$ embedding vectors:
 
 $$
 \mathbf{X} = \{ \mathbf{h}_1, \mathbf{h}_2, \dots, \mathbf{h}_N \}, \quad \mathbf{h}_i \in \mathbb{R}^{2048}
@@ -144,16 +144,20 @@ $$
 The raw transcriptomic data (`data_mrna_seq_v2_rsem.txt`) contains RSEM normalized counts for M = 20,518 genes. Directly feeding 20,518 features into a multimodal network causes severe overfitting and curse-of-dimensionality degradation.
 
 ##### Step 1: Population Variance Gene Ranking
-For each gene `j` in the transcriptomic panel, unbiased population sample variance is computed across the cohort (`N_pat = 945`):
+For each gene $j$ in the transcriptomic panel, unbiased population sample variance is computed across the patient cohort ($N = 945$):
 
 $$
-s_j^2 = \frac{1}{N_{\text{pat}} - 1} \sum_{i=1}^{N_{\text{pat}}} (x_{ij} - \bar{x}_j)^2
+s_j^2 = \frac{1}{N - 1} \sum_{i=1}^{N} (x_{ij} - \bar{x}_j)^2
 $$
 
-Genes are ranked in descending order: `s_(1)^2 >= s_(2)^2 >= ... >= s_(M)^2`.
+Genes are ranked in descending order:
+
+$$
+s_{(1)}^2 \ge s_{(2)}^2 \ge \dots \ge s_{(M)}^2
+$$
 
 ##### Step 2: Top 500 Informative Biomarker Cutoff
-The top 500 genes (K = 500) capture the vast majority of biological variance in breast cancer oncogenesis. This subset naturally isolates intrinsic PAM50 drivers (*ESR1*, *PGR*, *ERBB2*, *MKI67*, *FOXA1*, *GATA3*, *KRT5*, *KRT14*, *EGFR*, *SOX10*) while excluding non-informative housekeeping genes (*ACTB*, *GAPDH*, *B2M*).
+The top 500 genes ($K = 500$) capture the vast majority of biological variance in breast cancer oncogenesis. This subset naturally isolates intrinsic PAM50 drivers (*ESR1*, *PGR*, *ERBB2*, *MKI67*, *FOXA1*, *GATA3*, *KRT5*, *KRT14*, *EGFR*, *SOX10*) while excluding non-informative housekeeping genes (*ACTB*, *GAPDH*, *B2M*).
 
 ##### Step 3: StandardScaler Z-Score Transformation
 Extensive testing revealed that direct Z-score standardization on raw counts preserves relative linear expression amplitude better than log2 transforms:
@@ -162,7 +166,13 @@ $$
 z_{ij} = \frac{x_{ij} - \mu_j}{\sigma_j}
 $$
 
-where `\mu_j` and `\sigma_j` are fitted across the training cohort and saved in `scaler_genomics_500.joblib`. This produces the dense standardized genomic vector:
+where cohort mean and standard deviation per gene:
+
+$$
+\mu_j = \frac{1}{N} \sum_{i=1}^{N} x_{ij}, \quad \sigma_j = \sqrt{s_j^2}
+$$
+
+are fitted across the training cohort and saved in `scaler_genomics_500.joblib`. This produces the dense standardized genomic vector:
 
 $$
 \mathbf{x}_{\text{gen}} \in \mathbb{R}^{500}
@@ -198,15 +208,15 @@ $$
 While permutation-invariant, mean-pooling dilutes focal malignant signals across non-neoplastic tissue, while max-pooling discards tumor microenvironment context.
 
 ##### Paradigm 2: TransMIL - Transformer-based Correlated MIL (NB 05)
-Standard Softmax self-attention has quadratic complexity O(N^2), which is prohibitive when bags contain up to N = 3,000 patches. TransMIL utilizes the **Nyström approximation** of self-attention to reduce complexity to linear O(N):
+Standard Softmax self-attention has quadratic complexity $\mathcal{O}(N^2)$, which is prohibitive when bags contain up to $N = 3,000$ patches. TransMIL utilizes the **Nyström approximation** of self-attention to reduce complexity to linear $\mathcal{O}(N)$:
 
 $$
 \hat{\mathbf{A}} = \text{Softmax}\left(\frac{\mathbf{Q} \tilde{\mathbf{K}}^\top}{\sqrt{d}}\right) \left[\text{Softmax}\left(\frac{\tilde{\mathbf{Q}} \tilde{\mathbf{K}}^\top}{\sqrt{d}}\right)\right]^+ \text{Softmax}\left(\frac{\tilde{\mathbf{Q}} \mathbf{K}^\top}{\sqrt{d}}\right)
 $$
 
-where `\tilde{\mathbf{Q}}` and `\tilde{\mathbf{K}}` represent selected landmark approximations (m = 64 landmarks).
+where $\tilde{\mathbf{Q}}$ and $\tilde{\mathbf{K}}$ represent selected landmark approximations ($m = 64$ landmarks).
 
-A learnable classification token `z_cls` is prepended to the patch sequence. Through multi-head Nyström attention layers, morphological correlations between distant tissue regions are learned, outputting a slide representation:
+A learnable classification token [CLS] is prepended to the patch sequence. Through multi-head Nyström attention layers, morphological correlations between distant tissue regions are learned, outputting a slide representation:
 
 $$
 \mathbf{v}_{\text{img}} \in \mathbb{R}^{512}
@@ -243,7 +253,7 @@ $$
 $$
 
 ##### Stream 3: Multimodal Late Feature Fusion
-The morphological latent vector `v_img` and transcriptomic latent vector `v_gen` are concatenated into a 1024-dimensional joint representation:
+The morphological latent vector and transcriptomic latent vector are concatenated into a 1024-dimensional joint representation:
 
 $$
 \mathbf{v}_{\text{fusion}} = \left[ \mathbf{v}_{\text{img}} \,,\, \mathbf{v}_{\text{gen}} \right] \in \mathbb{R}^{1024}
@@ -256,16 +266,22 @@ $$
 \hat{\mathbf{y}} = \text{Softmax}\left(\mathbf{W}_4 \cdot \text{Dropout}_{0.3}\left(\text{ReLU}\left(\mathbf{W}_3 \mathbf{v}_{\text{fusion}} + \mathbf{b}_3\right)\right) + \mathbf{b}_4\right)
 $$
 
-where `\mathbf{W}_3 \in \mathbb{R}^{256 \times 1024}` and `\mathbf{W}_4 \in \mathbb{R}^{4 \times 256}`.
+$$
+\mathbf{W}_3 \in \mathbb{R}^{256 \times 1024}, \quad \mathbf{W}_4 \in \mathbb{R}^{4 \times 256}
+$$
 
 ##### Optimization: Label-Smoothed Class-Weighted Cross-Entropy Loss
-To mitigate the 6.4:1 class imbalance between Luminal A and HER2-enriched subtypes, training uses weighted cross-entropy with label smoothing (`\epsilon = 0.05`):
+To mitigate the 6.4:1 class imbalance between Luminal A and HER2-enriched subtypes, training uses weighted cross-entropy with label smoothing ($\epsilon = 0.05$):
 
 $$
 \mathcal{L}_{\text{CE}} = -\sum_{c=1}^4 w_c \left[ (1 - \epsilon) y_c + \frac{\epsilon}{4} \right] \log(\hat{y}_c)
 $$
 
-where class weights are calibrated inversely to training frequency: `w_Her2 = 3.03`, `w_Basal = 1.38`, `w_LumB = 1.20`, and `w_LumA = 0.47`.
+where class weights are calibrated inversely to training frequency:
+
+$$
+w_{\text{Her2}} = 3.03, \quad w_{\text{Basal}} = 1.38, \quad w_{\text{LumB}} = 1.20, \quad w_{\text{LumA}} = 0.47
+$$
 
 ---
 
@@ -285,48 +301,60 @@ where class weights are calibrated inversely to training frequency: `w_Her2 = 3.
 ```
 
 ##### Step 1: Latent Space Orthogonal Dimensionality Reduction (PCA-16)
-Fitting a survival model directly on 1024 features across 945 samples induces severe collinearity. Principal Component Analysis (PCA) reduces the joint representation `v_fusion` to `d = 16` orthogonal components, retaining over 88.2% of cumulative variance:
+Fitting a survival model directly on 1024 features across 945 samples induces severe collinearity. Principal Component Analysis (PCA) reduces the joint representation to $d = 16$ orthogonal components, retaining over 88.2% of cumulative variance:
 
 $$
 \mathbf{z} = \mathbf{U}_{16}^\top (\mathbf{v}_{\text{fusion}} - \boldsymbol{\mu}_{\text{fusion}}) \in \mathbb{R}^{16}
 $$
 
 ##### Step 2: Regularized Cox Proportional Hazards Formulation
-The hazard rate of death at time `t` given covariates `z` is parameterized as:
+The hazard rate of death at time $t$ given covariates $\mathbf{z}$ is parameterized as:
 
 $$
-h(t \mid \mathbf{z}) = h_0(t) \exp\left(\boldsymbol{\beta}^\top \mathbf{z}\right)
+h(t \mid \mathbf{z}) = h_0(t) \exp\left(\boldsymbol{\beta}^\top \mathbf{z}\right), \quad \boldsymbol{\beta} \in \mathbb{R}^{16}
 $$
 
-where `h_0(t)` is the non-parametric baseline hazard and `\boldsymbol{\beta} \in \mathbb{R}^{16}` is estimated by maximizing Cox's partial log-likelihood with L2 penalty:
+where baseline hazard function $h_0(t)$ and coefficient vector $\boldsymbol{\beta}$ are estimated by maximizing Cox's partial log-likelihood with L2 penalty:
 
 $$
 \ell(\boldsymbol{\beta}) = \sum_{i: E_i = 1} \left[ \boldsymbol{\beta}^\top \mathbf{z}_i - \log\left(\sum_{j \in R(T_i)} \exp\left(\boldsymbol{\beta}^\top \mathbf{z}_j\right)\right) \right] - \lambda \|\boldsymbol{\beta}\|_2^2
 $$
 
-where `R(T_i)` denotes the set of patients at risk immediately prior to time `T_i`.
+where the risk set $R(t)$ denotes patients surviving immediately prior to failure time $t$.
 
 ##### Step 3: Prognostic Discrimination (Harrell's C-Index)
-Model discriminative capability is quantified by Harrell's Concordance Index, evaluating all evaluable patient pairs `(i, j)`:
+Model discriminative capability is quantified by Harrell's Concordance Index, evaluating all evaluable patient pairs $(i, j)$:
 
 $$
 C = \frac{\sum_{i \ne j} \mathbb{I}(T_i < T_j) \cdot \mathbb{I}(\hat{\eta}_i > \hat{\eta}_j) \cdot E_i}{\sum_{i \ne j} \mathbb{I}(T_i < T_j) \cdot E_i}
 $$
 
 ##### Step 4: Clinical 3-Tier Risk Stratification
-Patient prognostic hazard scores `\eta_i = \boldsymbol{\beta}^\top \mathbf{z}_i` were calibrated against clinical survival outcomes to establish three actionable risk tiers:
-- **Low Risk (`\eta < 0.90`):** Indolent prognosis, 5-year survival probability > 88% (Green badge).
-- **Borderline / Moderate Risk (`0.90 <= \eta <= 1.15`):** Intermediate prognosis, 5-year survival probability 70% - 85% (Amber badge).
-- **High Risk (`\eta > 1.15`):** Aggressive prognosis, 5-year survival probability < 65% (Red badge).
+Patient prognostic hazard scores are computed from the linear predictor:
+
+$$
+\eta_i = \boldsymbol{\beta}^\top \mathbf{z}_i
+$$
+
+Calibrated against clinical overall survival outcomes, the continuous hazard score is stratified into three actionable clinical risk tiers:
+- **Low Risk ($\eta \lt 0.90$):** Indolent prognosis, 5-year survival probability > 88% (Green badge).
+- **Borderline / Moderate Risk ($0.90 \le \eta \le 1.15$):** Intermediate prognosis, 5-year survival probability 70% - 85% (Amber badge).
+- **High Risk ($\eta \gt 1.15$):** Aggressive prognosis, 5-year survival probability < 65% (Red badge).
 
 ##### Step 5: 5-Year Survival Curve Projection (Breslow Estimator)
-The cumulative baseline hazard `H_0(t) = \int_0^t h_0(u) du` is estimated using Breslow's method:
+The cumulative baseline hazard function:
+
+$$
+H_0(t) = \int_0^t h_0(u) \, du
+$$
+
+is estimated non-parametrically using Breslow's method:
 
 $$
 \hat{H}_0(t) = \sum_{t_i \le t} \frac{d_i}{\sum_{j \in R(t_i)} \exp(\hat{\eta}_j)}
 $$
 
-The time-dependent survival function for any new patient with risk score `\eta` over a 60-month timeline is computed as:
+The time-dependent survival function for any new patient with risk score $\eta$ over a 60-month timeline is computed as:
 
 $$
 S(t \mid \mathbf{z}) = \exp\left(-\hat{H}_0(t) \exp(\eta)\right)
@@ -349,7 +377,7 @@ $$
 ```
 
 ##### Domain 1: Histopathological Saliency Mapping (CLS Attention Similarity)
-To localize the histological regions driving the TransMIL decision, the cosine similarity between the slide-level `[CLS]` token representation `v_img` and each individual patch representation `h_i` is computed:
+To localize the histological regions driving the TransMIL decision, the cosine similarity between the slide-level [CLS] token representation and each individual patch representation is computed:
 
 $$
 s_i = \frac{\mathbf{v}_{\text{img}}^\top \mathbf{h}_i}{\|\mathbf{v}_{\text{img}}\| \|\mathbf{h}_i\|}, \quad \alpha_i = \frac{s_i - \min(\mathbf{s})}{\max(\mathbf{s}) - \min(\mathbf{s}) + \epsilon} \in [0, 1]
@@ -361,7 +389,7 @@ $$
 - **Attention < 0.25 (Green Border):** Acellular dense collagenous stroma, benign adipose tissue, and normal lobules.
 
 ##### Domain 2: Genomic Attribution via Integrated Gradients
-To identify which of the 500 genes contributed most significantly to the predicted PAM50 logit `F_c(x)`, we compute the path integral along the straight line from a neutral baseline `x' = 0` (average expression across normalized cohort) to the patient's actual expression vector `x`:
+To identify which of the 500 genes contributed most significantly to the predicted PAM50 logit, path integrals are computed along the straight line from a neutral baseline $\mathbf{x}' = \mathbf{0}$ (average expression across normalized cohort) to the patient's actual expression vector $\mathbf{x}$:
 
 $$
 \text{Attr}_j(\mathbf{x}) = (x_j - x'_j) \times \int_{0}^{1} \frac{\partial F_c\left(\mathbf{x}' + \alpha (\mathbf{x} - \mathbf{x}')\right)}{\partial x_j} \, d\alpha
