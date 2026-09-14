@@ -17,6 +17,11 @@ data/
 data_mrna_seq_v2_rsem.txt
 tcga-brca-resnet50-wsi-features/
 
+# 3. Excluded Research Notebooks & Scripts Folders
+nb-w-output/
+nb w output/
+scripts/
+
 # 3. Python & IDE Caches
 __pycache__/
 *.py[cod]
