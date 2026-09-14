@@ -100,7 +100,7 @@ The primary production model integrates both modalities via late feature fusion:
 
 #### 3.3. Phase 3: BiLSTM Multimodal Comparison
 To assess sequence modeling versus attention mechanisms for histological patch bags, an alternative architecture was evaluated:
-- Patches were linearly projected to 512D and fed into a 2-layer Bidirectional LSTM ($\text{hidden\_dim} = 256$), producing a 512D bidirectional sequence representation concatenated with the 512D genomic vector.
+- Patches were linearly projected to 512D and fed into a 2-layer Bidirectional LSTM (`hidden_dim = 256`), producing a 512D bidirectional sequence representation concatenated with the 512D genomic vector.
 
 #### 3.4. Phase 4: Multimodal Survival Prognosis (Cox Proportional Hazards)
 - The 1024-dimensional multimodal latent representations $\mathbf{v}_{\text{fusion}}$ were extracted from the trained model.
