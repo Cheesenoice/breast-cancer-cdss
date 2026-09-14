@@ -52,19 +52,15 @@ From the total TCGA-BRCA collection, **945 unique patients** possess complete, m
 ```
 
 #### 2.1. Histopathology Pipeline (Whole Slide Images)
-- **Slide Ingestion:** Aperio format (`.svs`) Whole Slide Images scanned at $20\times$ (0.50 $\mu$m/px) and $40\times$ (0.25 $\mu$m/px).
+- **Slide Ingestion:** Aperio format (`.svs`) Whole Slide Images scanned at 20x (0.50 um/px) and 40x (0.25 um/px).
 - **Tissue Segmentation:** RGB-to-HSV conversion, Otsu thresholding on the Saturation channel to eliminate glass background, marker pen artifacts, and mounting media defects.
-- **Patch Extraction:** Non-overlapping tiling into $256 \times 256$ pixel patches. Patches with $<40\%$ tissue content or standard deviation $<10$ (blank/fat tissue) were discarded.
-- **Visual Feature Encoding:** Patches were normalized using ImageNet channel parameters ($\mu = [0.485, 0.456, 0.406]$, $\sigma = [0.229, 0.224, 0.225]$) and processed through a **ResNet-50** backbone truncated at the penultimate layer (`AdaptiveAvgPool2d`), yielding a 2048-dimensional embedding vector per patch. A slide is thus represented as a bag:
-  $$\mathbf{X}_{\text{WSI}} \in \mathbb{R}^{N \times 2048}$$
-  where $N$ varies between 500 and 4,000 patches depending on tumor specimen size.
+- **Patch Extraction:** Non-overlapping tiling into 256x256 pixel patches. Patches with <40% tissue content or standard deviation <10 (blank/fat tissue) were discarded.
+- **Visual Feature Encoding:** Patches were normalized using ImageNet channel parameters (mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225]) and processed through a **ResNet-50** backbone truncated at the penultimate layer (`AdaptiveAvgPool2d`), yielding a 2048-dimensional embedding vector per patch. A slide is thus represented as a bag: `X_WSI in R^(N x 2048)`, where `N` varies between 500 and 4,000 patches depending on tumor specimen size.
 
 #### 2.2. Transcriptomics Pipeline (RNA-Seq)
 - **Input Matrix:** `data_mrna_seq_v2_rsem.txt` containing 20,518 genes across 1,082 samples (RNA-Seq V2 RSEM normalized counts).
 - **Feature Selection:** Variance ranking was computed across the cohort. The top 500 genes with highest variance across the population were extracted. These capture key biological variance in intrinsic breast cancer oncogenes (e.g., *ESR1*, *PGR*, *ERBB2*, *MKI67*, *FOXA1*, *GATA3*, *KRT5*, *EGFR*) while discarding noisy invariant housekeeping genes (*ACTB*, *GAPDH*).
-- **Standardization:** Evaluated both $\log_2(x+1)$ transform and direct Z-score standardization. The optimal empirical separation was obtained via direct feature-wise Z-score scaling (`StandardScaler` fitted on the 500 genes):
-  $$z_{ij} = \frac{x_{ij} - \mu_j}{\sigma_j}, \quad j \in \{1, \dots, 500\}$$
-  yielding a dense vector $\mathbf{x}_{\text{gen}} \in \mathbb{R}^{500}$.
+- **Standardization:** Evaluated both log2(x+1) transform and direct Z-score standardization. The optimal empirical separation was obtained via direct feature-wise Z-score scaling (`StandardScaler` fitted on the 500 genes), yielding a dense 500-dimensional vector `x_gen in R^500`.
 
 #### 2.3. Clinical Covariates
 - Features retained for baseline comparison and survival adjustment: age at diagnosis, AJCC pathologic tumor stage (Stage I, II, III, IV), surgical margin status, and lymph node involvement. Categorical variables were one-hot encoded; numerical variables were median-imputed and standardized.
@@ -74,13 +70,16 @@ From the total TCGA-BRCA collection, **945 unique patients** possess complete, m
 ### 3. Model Methodologies & Architectures
 
 #### 3.1. Phase 1: Unimodal Baselines
-1. **Traditional Machine Learning (WSI alone):** Slide-level mean-pooling of the $N \times 2048$ patch vectors into a single 2048D vector, followed by Logistic Regression, Random Forest, Support Vector Machines with RBF kernel, and XGBoost.
+1. **Traditional Machine Learning (WSI alone):** Slide-level mean-pooling of the `N x 2048` patch vectors into a single 2048D vector, followed by Logistic Regression, Random Forest, Support Vector Machines with RBF kernel, and XGBoost.
 2. **Naive Deep MIL:** Deep multiple instance learning with simple permutation-invariant aggregation operators (Global Mean Pooling, Global Max Pooling).
 3. **TransMIL (Transformer-based MIL):**
    - Applies Correlated Nyström Self-Attention ($O(N)$ computational complexity) to model long-range morphological dependencies between disparate tissue regions.
-   - Prepends a learnable `[CLS]` token $\mathbf{z}_{\text{cls}}$ to aggregate slide-level representation.
-   - Outputs a 512D morphological latent vector $\mathbf{v}_{\text{img}}$ alongside patch-level attention weights:
-     $$a_i = \text{sim}(\mathbf{v}_{\text{img}}, \mathbf{h}_i), \quad i \in \{1, \dots, N\}$$
+   - Prepends a learnable `[CLS]` token `z_cls` to aggregate slide-level representation.
+   - Outputs a 512D morphological latent vector `v_img` alongside patch-level attention weights:
+
+$$
+a_i = \text{sim}(\mathbf{v}_{\text{img}}, \mathbf{h}_i), \quad i \in \{1, \dots, N\}
+$$
 
 #### 3.2. Phase 2: Multimodal Late Fusion Architecture
 The primary production model integrates both modalities via late feature fusion:
@@ -91,34 +90,37 @@ The primary production model integrates both modalities via late feature fusion:
 [ RNA-Seq: 500D Vector ]   ────► Genomics MLP      ────► 512D Latent Vector ──┘
 ```
 
-1. **Vision Stream:** TransMIL vision network processing the bag of $N$ patch embeddings:
-   $$\mathbf{v}_{\text{img}} = \text{TransMIL}(\mathbf{X}) \in \mathbb{R}^{512}$$
-
-2. **Genomics Stream:** Multi-Layer Perceptron (Dense 500 $\to$ 256, LayerNorm, ReLU, Dropout 0.3, Dense 256 $\to$ 512, ReLU) processing the 500-gene profile:
-   $$\mathbf{v}_{\text{gen}} = \text{MLP}(\mathbf{x}) \in \mathbb{R}^{512}$$
-
-3. **Multimodal Fusion Layer:** Direct concatenation of histological and transcriptomic embeddings:
-   $$\mathbf{v}_{\text{fusion}} = [\mathbf{v}_{\text{img}} \,\|\, \mathbf{v}_{\text{gen}}] \in \mathbb{R}^{1024}$$
-
-4. **Classification Head:** Dense 1024 $\to$ 256, ReLU, Dropout 0.3, Dense 256 $\to$ 4 (Softmax).
-
-5. **Loss Function:** Label-smoothed Cross-Entropy with class weighting to penalize minority-class misclassifications (HER2-enriched and Basal-like).
+- **Vision Stream:** TransMIL vision network processing the bag of `N` patch embeddings:
+  `v_img = TransMIL(X) in R^512`
+- **Genomics Stream:** Multi-Layer Perceptron (Dense 500 -> 256, LayerNorm, ReLU, Dropout 0.3, Dense 256 -> 512, ReLU) processing the 500-gene profile:
+  `v_gen = MLP(x) in R^512`
+- **Multimodal Fusion Layer:** Direct concatenation of histological and transcriptomic embeddings:
+  `v_fusion = [v_img || v_gen] in R^1024`
+- **Classification Head:** Dense 1024 -> 256, ReLU, Dropout 0.3, Dense 256 -> 4 (Softmax).
+- **Loss Function:** Label-smoothed Cross-Entropy with class weighting to penalize minority-class misclassifications (HER2-enriched and Basal-like).
 
 #### 3.3. Phase 3: BiLSTM Multimodal Comparison
 To assess sequence modeling versus attention mechanisms for histological patch bags, an alternative architecture was evaluated:
 - Patches were linearly projected to 512D and fed into a 2-layer Bidirectional LSTM (`hidden_dim = 256`), producing a 512D bidirectional sequence representation concatenated with the 512D genomic vector.
 
 #### 3.4. Phase 4: Multimodal Survival Prognosis (Cox Proportional Hazards)
-- The 1024-dimensional multimodal latent representations $\mathbf{v}_{\text{fusion}}$ were extracted from the trained model.
-- Dimensionality reduction via Principal Component Analysis reduced the feature space to 16 orthogonal components capturing $>88\%$ of latent variance.
-- A semi-parametric **Cox Proportional Hazards (CoxPH)** model with $L_2$ regularization was fitted against overall survival $(T, E)$:
-  $$h(t \mid \mathbf{z}) = h_0(t) \exp(\boldsymbol{\beta}^\top \mathbf{z})$$
+- The 1024-dimensional multimodal latent representations (`v_fusion`) were extracted from the trained model.
+- Dimensionality reduction via Principal Component Analysis reduced the feature space to 16 orthogonal components capturing >88% of latent variance.
+- A semi-parametric **Cox Proportional Hazards (CoxPH)** model with L2 regularization was fitted against overall survival $(T, E)$:
+
+$$
+h(t \mid \mathbf{z}) = h_0(t) \exp(\boldsymbol{\beta}^\top \mathbf{z})
+$$
+
 - Risk scores $\eta = \boldsymbol{\beta}^\top \mathbf{z}$ were stratified into three clinical tiers:
-  - **Low Risk:** $\eta < 0.90$ (Green)
-  - **Borderline / Moderate Risk:** $0.90 \le \eta \le 1.15$ (Amber)
-  - **High Risk:** $\eta > 1.15$ (Red)
-- Survival probability over a 60-month horizon was modeled using Breslow's estimator of the cumulative baseline hazard $H_0(t)$:
-  $$S(t \mid \mathbf{z}) = \exp\left(-H_0(t) e^{\eta}\right)$$
+  - **Low Risk:** hazard score < 0.90 (Green)
+  - **Borderline / Moderate Risk:** 0.90 <= hazard score <= 1.15 (Amber)
+  - **High Risk:** hazard score > 1.15 (Red)
+- Survival probability over a 60-month horizon was modeled using Breslow's estimator of the cumulative baseline hazard:
+
+$$
+S(t \mid \mathbf{z}) = \exp\left(-H_0(t) e^{\eta}\right)
+$$
 
 ---
 
@@ -138,7 +140,7 @@ All models were evaluated under stratified 5-fold cross-validation on identical 
 | **Clinical Baseline** | Clinical Alone | Age, Stage, Histology + Logistic Regression | 61.2% | 0.518 | Clinical staging provides marginal predictive power for molecular subtypes |
 | **Multimodal Fusion** | WSI + Clinical | ResNet-50 Mean-Pool + Clinical + SVM | 69.1% | 0.586 | Adding clinical covariates improves accuracy to ~69% |
 | **Multimodal Fusion** | WSI + Clinical | ResNet-50 Mean-Pool + Clinical + LogReg | 69.0% | 0.594 | Clear improvement over unimodal WSI |
-| **Genomics Unimodal** | RNA-Seq Alone | 500-Gene MLP (Dense 500 $\to$ 256 $\to$ 512) | 85.3% | 0.832 | Gene expression directly reflects molecular PAM50 taxonomy |
+| **Genomics Unimodal** | RNA-Seq Alone | 500-Gene MLP (Dense 500 -> 256 -> 512) | 85.3% | 0.832 | Gene expression directly reflects molecular PAM50 taxonomy |
 | **Multimodal Fusion** | WSI + RNA-Seq | ResNet-50 Mean-Pool + RNA-Seq + XGBoost | 87.5% | 0.859 | High accuracy, but lacks spatial patch interpretability |
 | **Multimodal Fusion** | WSI + RNA-Seq | BiLSTM (2-layer 512D) + Genomics MLP | 75.9% | 0.655 | Sequential ordering of patches adds noise compared to attention sets |
 | **Multimodal TransMIL** | **WSI + RNA-Seq** | **TransMIL + Genomics MLP (Late Fusion)** | **88.4%** | **0.875** | **Optimal balance:** Highest F1, robust across all 4 classes, spatial attention retained |
@@ -147,11 +149,11 @@ All models were evaluated under stratified 5-fold cross-validation on identical 
 
 | Prognostic Model | Features Used | Harrell's C-Index | 95% Confidence Interval | p-value |
 | :--- | :--- | :---: | :---: | :---: |
-| Clinical Stage Only (AJCC) | Stage I, II, III, IV | 0.612 | [0.558, 0.666] | $p = 0.003$ |
-| Pathological Grade + Age | Histologic Grade + Age | 0.641 | [0.589, 0.693] | $p < 0.001$ |
-| Unimodal WSI Latent (TransMIL) | 16 PCA Components of $\mathbf{v}_{\text{img}}$ | 0.654 | [0.601, 0.707] | $p < 0.001$ |
-| Unimodal RNA Latent (500 Genes) | 16 PCA Components of $\mathbf{v}_{\text{gen}}$ | 0.718 | [0.667, 0.769] | $p < 0.001$ |
-| **Multimodal Super-Vector + CoxPH** | **16 PCA Components of $\mathbf{v}_{\text{fusion}}$** | **0.767** | **[0.720, 0.814]** | **$p < 0.0001$** |
+| Clinical Stage Only (AJCC) | Stage I, II, III, IV | 0.612 | [0.558, 0.666] | p = 0.003 |
+| Pathological Grade + Age | Histologic Grade + Age | 0.641 | [0.589, 0.693] | p < 0.001 |
+| Unimodal WSI Latent (TransMIL) | 16 PCA Components of `v_img` | 0.654 | [0.601, 0.707] | p < 0.001 |
+| Unimodal RNA Latent (500 Genes) | 16 PCA Components of `v_gen` | 0.718 | [0.667, 0.769] | p < 0.001 |
+| **Multimodal Super-Vector + CoxPH** | **16 PCA Components of `v_fusion`** | **0.767** | **[0.720, 0.814]** | **p < 0.0001** |
 
 *Key finding:* The combined multimodal latent space provides a **+15.5% absolute increase in concordance index** over clinical staging alone, confirming that paired morphology and transcriptomics encode independent prognostic risk factors.
 
@@ -163,13 +165,21 @@ To satisfy clinical verification standards, the framework operates dual interpre
 
 #### 5.1. Spatial Morphological Attention (WSI Domain)
 - Extracted using cosine similarity between the TransMIL `[CLS]` token representation and each individual patch representation:
-  $$\alpha_i = \frac{\mathbf{v}_{\text{img}}^\top \mathbf{h}_i}{\|\mathbf{v}_{\text{img}}\| \|\mathbf{h}_i\|}, \quad \text{normalized to } [0, 1]$$
+
+$$
+\alpha_i = \frac{\mathbf{v}_{\text{img}}^\top \mathbf{h}_i}{\|\mathbf{v}_{\text{img}}\| \|\mathbf{h}_i\|}, \quad \alpha_i \in [0, 1]
+$$
+
 - **Pathological Correlation:** High-attention patches ($\alpha_i \ge 0.75$, highlighted with red diagnostic borders) correspond to areas of high cellularity, pleomorphic tumor cell clusters, and active mitotic figures. Low-attention patches ($\alpha_i < 0.25$, green borders) correspond to benign stroma, adipose connective tissue, and acellular necrosis.
 
 #### 5.2. Transcriptomic Feature Attribution (Genomics Domain)
 - Computed via **Integrated Gradients (Sundararajan et al.)** across the 500 input gene expressions relative to the predicted PAM50 logit $F_c(\mathbf{x})$:
-  $$\text{Attr}_j(x) = (x_j - x'_j) \times \int_{0}^{1} \frac{\partial F_c(x' + \alpha (x - x'))}{\partial x_j} \, d\alpha$$
-  approximated using a 20-step Riemann summation against a neutral zero-expression baseline.
+
+$$
+\text{Attr}_j(\mathbf{x}) = (x_j - x'_j) \times \int_{0}^{1} \frac{\partial F_c(\mathbf{x}' + \alpha (\mathbf{x} - \mathbf{x}'))}{\partial x_j} \, d\alpha
+$$
+
+approximated using a 20-step Riemann summation against a neutral zero-expression baseline $\mathbf{x}' = \mathbf{0}$.
 - **Top Attributed Biomarkers by Subtype:**
   - **Luminal A:** Strong positive attribution on *ESR1*, *PGR*, *FOXA1*, *GATA3*; negative attribution on proliferation genes.
   - **Luminal B:** Positive attribution on *ESR1* and *MKI67* (elevated proliferation marker).
@@ -188,7 +198,7 @@ The interactive user interface is implemented in Python via Streamlit (`web_app/
 | :--- | :--- | :--- |
 | **Main Orchestrator** | `web_app/app.py` | UI layout, tab navigation, state management, threshold controls |
 | **Model Ingestion & Inference** | `web_app/model_utils.py` | PyTorch model loading, ResNet-50 extractor caching, RNA scaler transformation, forward pass execution |
-| **WSI Processing Engine** | `web_app/wsi_utils.py` | Gigapixel SVS reading (`tifffile`), Otsu tissue segmentation, on-the-fly $256 \times 256$ patch slicing, metadata extraction |
+| **WSI Processing Engine** | `web_app/wsi_utils.py` | Gigapixel SVS reading (`tifffile`), Otsu tissue segmentation, on-the-fly 256x256 patch slicing, metadata extraction |
 | **Survival Prognosis Engine** | `web_app/survival_utils.py` | Multimodal CoxPH hazard score computation, 3-tier risk stratification, Kaplan-Meier curve generation |
 | **Explainable AI Engine** | `web_app/xai_utils.py` | Integrated Gradients computation, Top 15 driver gene waterfall chart, 8-biomarker radar diagram |
 | **Medical Design Styling** | `web_app/styles.py` | Clean CSS stylesheet, metrics cards, clinical badge palettes, responsive layout |
@@ -196,11 +206,11 @@ The interactive user interface is implemented in Python via Streamlit (`web_app/
 #### 6.2. On-the-Spot Ingestion Workflow for External Cases
 The CDSS supports direct ingestion of novel external patient data:
 1. **User Input:** Operator uploads one Whole Slide Image (`.svs`) and one 1-row CSV file containing raw RSEM counts for all 20,518 genes.
-2. **On-the-Fly Patch Slicing ($\sim 1.0$s):** `wsi_utils.extract_real_patches_from_svs` opens Series 0 of the `.svs` slide via `tifffile`, filters out background glass, ranks tissue candidates by texture variance, and crops 24 genuine $256 \times 256$ biopsy patches.
-3. **On-the-Fly Feature Extraction ($\sim 2.1$s):** The 24 patches are passed through the cached PyTorch ResNet-50 backbone, generating a $(1, 24, 2048)$ vision tensor in memory.
-4. **On-the-Fly RNA Standardization ($\sim 0.2$s):** `model_utils.preprocess_raw_20k_rna` maps the 20,518 genes to the pre-fitted top 500 features and applies the cohort `StandardScaler`, yielding a $(1, 500)$ tensor.
-5. **Forward Inference ($\sim 0.05$s):** The TransMIL late fusion model outputs PAM50 subtype probabilities, confidence score, patch attention saliency, survival hazard index, and gene attribution waterfall.
-6. **Session-State Caching:** Extracted ResNet-50 features are cached in `st.session_state` so subsequent UI interactions (tab transitions, threshold adjustments) execute in $<10$ ms.
+2. **On-the-Fly Patch Slicing (~1.0s):** `wsi_utils.extract_real_patches_from_svs` opens Series 0 of the `.svs` slide via `tifffile`, filters out background glass, ranks tissue candidates by texture variance, and crops 24 genuine 256x256 biopsy patches.
+3. **On-the-Fly Feature Extraction (~2.1s):** The 24 patches are passed through the cached PyTorch ResNet-50 backbone, generating a `(1, 24, 2048)` vision tensor in memory.
+4. **On-the-Fly RNA Standardization (~0.2s):** `model_utils.preprocess_raw_20k_rna` maps the 20,518 genes to the pre-fitted top 500 features and applies the cohort `StandardScaler`, yielding a `(1, 500)` tensor.
+5. **Forward Inference (~0.05s):** The TransMIL late fusion model outputs PAM50 subtype probabilities, confidence score, patch attention saliency, survival hazard index, and gene attribution waterfall.
+6. **Session-State Caching:** Extracted ResNet-50 features are cached in `st.session_state` so subsequent UI interactions (tab transitions, threshold adjustments) execute in <10 ms.
 
 ---
 
@@ -299,7 +309,7 @@ Navigate to `http://localhost:8501` in your browser.
 ### 9. Technical Limitations & Discussion
 
 1. **Retrospective Cohort Bias:** All training and validation cohorts derive from TCGA, which exhibits demographic skew toward Caucasian populations and overrepresents surgical candidates from tertiary academic centers. External generalization requires prospective multicenter validation.
-2. **Histological Resolution Trade-off:** Whole-slide inference currently uses 24 tissue-dense patches sampled across the slide rather than all $N > 2000$ patches to enable low-latency ($<3$s) CPU inference during live clinical demonstrations. While this preserves dominant tumor morphology, micro-focal invasion may be under-sampled.
+2. **Histological Resolution Trade-off:** Whole-slide inference currently uses 24 tissue-dense patches sampled across the slide rather than all N > 2000 patches to enable low-latency (<3s) CPU inference during live clinical demonstrations. While this preserves dominant tumor morphology, micro-focal invasion may be under-sampled.
 3. **RNA-Seq Platform Dependence:** The 500-gene scaler assumes count distributions approximately aligned with Illumina HiSeq RNA-Seq V2 RSEM outputs. Microarray data or targeted panels (e.g., Nanostring nCounter) require platform-specific calibration before ingestion.
 
 ---
