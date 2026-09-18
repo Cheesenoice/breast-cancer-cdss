@@ -738,7 +738,7 @@ flowchart TD
 ## 10. Repository Organization & File Structure
 
 ```
-breast-cancer-cdss/
+multimodal-pathology-genomics-brca/
 ├── assets/                               # Publication-grade figures & diagrams (tracked by git)
 │   └── images/                           # High-resolution benchmark, XAI, and architecture visuals
 │       ├── genomics_filtering_pipeline.png
@@ -824,8 +824,8 @@ breast-cancer-cdss/
 
 ```bash
 # 1. Clone the repository
-git clone git@github.com:Cheesenoice/breast-cancer-cdss.git
-cd breast-cancer-cdss
+git clone git@github.com:Cheesenoice/multimodal-pathology-genomics-brca.git
+cd multimodal-pathology-genomics-brca
 
 # 2. Create and activate a Python virtual environment
 python -m venv venv
