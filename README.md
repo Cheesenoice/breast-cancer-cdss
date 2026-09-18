@@ -270,9 +270,9 @@ flowchart LR
 
 | Phase | Notebook Identifier | Focus Area | Methodology & Empirical Output |
 | :---: | :--- | :--- | :--- |
-| **1** | `00_wsi_svs_to_patches_preprocessing.ipynb` | Histology Tiling | OpenSlide reading, Otsu HSV thresholding, dual optical QC ($	ext{std} \ge 10.0$), $256 	imes 256$ tile extraction across 172 WSI files (21,970 clean tiles retained; 90.51% background discarded). |
+| **1** | `00_wsi_svs_to_patches_preprocessing.ipynb` | Histology Tiling | OpenSlide reading, Otsu HSV thresholding, dual optical QC ($\text{std} \ge 10.0$), $256 \times 256$ tile extraction across 172 WSI files (21,970 clean tiles retained; 90.51% background discarded). |
 | **1** | `01_TCGA_EDA_and_Clinical_Processing.ipynb` | Clinical EDA | Demographic analysis, PAM50 distribution verification, preliminary Kaplan-Meier survival curves. |
-| **1** | `02_CNN_Feature_Extraction_and_Baseline.ipynb` | Feature Extraction | ResNet-50 frozen ImageNet feature extraction ($N 	imes 2048	ext{D}$ bags). Mean-pooling + Random Forest baseline: Accuracy 57.63%, Macro-F1 31.39% (HER2 F1 = 0). |
+| **1** | `02_CNN_Feature_Extraction_and_Baseline.ipynb` | Feature Extraction | ResNet-50 frozen ImageNet feature extraction ($N \times 2048\text{D}$ bags). Mean-pooling + Random Forest baseline: Accuracy 57.63%, Macro-F1 31.39% (HER2 F1 = 0). |
 | **2** | `03_Classification_Traditional_ML.ipynb` | Baseline Tabular ML | 5 traditional algorithms on mean-pooled WSI features. Voting Ensemble: Accuracy 60.88% ± 2.37%, Macro-F1 44.47% ± 3.73%. |
 | **2** | `03.1_Classification_Traditional_ML_Advanced.ipynb` | PCA Engineering | PCA-128 and PCA-256 dimensionality reduction on WSI features with hyperparameter grid search. |
 | **2** | `03.2_Classification_ML_Clinical_Fusion.ipynb` | Tabular Early Fusion | Concatenation of WSI 256D + 8 clinical covariates. Voting Ensemble: Accuracy 73.24% ± 4.24%, Macro-F1 59.84% ± 5.40%. |
@@ -287,7 +287,7 @@ flowchart LR
 | **3** | `06.4_Multimodal_Architecture_DeepDive_WSI_Genomics_for_explain.ipynb` | Structural Audit | Layer-by-layer gradient tracking, activation checks, and dimension validation for downstream XAI. |
 | **3** | `06.6_Multimodal_WSI_BiLSTM_Genomics_Train.ipynb` | Sequence Modeling | Spatial sequence modeling via BiLSTM paired with Genomics MLP. Accuracy 86.17% ± 3.80%, Macro-F1 85.39% ± 4.30%, Mean ROC-AUC 0.9646 ± 0.018. |
 | **4** | `07_Survival_Analysis_Multimodal.ipynb` | Deep Survival CoxPH | 1024D multimodal embeddings condensed via PCA-16; regularized CoxPH achieves **C-Index 0.7667 ($p < 0.0001$)**. |
-| **4** | `07.1_LSTM_Survival_Prediction.ipynb` | BiLSTM Survival Net | Direct 5-year survival risk classification ($60	ext{ months}$) from sequential tile bags. Accuracy 72.31% ± 2.30%, ROC-AUC 0.6827 ± 6.20%. |
+| **4** | `07.1_LSTM_Survival_Prediction.ipynb` | BiLSTM Survival Net | Direct 5-year survival risk classification ($60\text{ months}$) from sequential tile bags. Accuracy 72.31% ± 2.30%, ROC-AUC 0.6827 ± 6.20%. |
 | **5** | `08_explainable_ai_multimodal.ipynb` | Dual-Domain XAI | Multimodal Integrated Gradients (Top 15 genes) + Slide-level [CLS] Attention Saliency mapped to color-coded tile borders. |
 | **5** | `09_Digital_Twin_Treatment_Simulation.ipynb` | In Silico Simulation | Counterfactual perturbation of biomarker expression (*ESR1*, *ERBB2*) simulating therapeutic responses. |
 | **5** | `10_Prepare_Web_Demo_Assets_Package.ipynb` | Asset Serialization | Export of trained PyTorch model weights, scalers, PCA components, and reference JSON files. |
@@ -299,7 +299,7 @@ flowchart LR
 
 ### 5.1. Stage 1: Histopathological Tiling & ResNet-50 Feature Encoding (NB 00, 02)
 
-Whole Slide Images (WSI) in Aperio `.svs` format contain gigapixel tissue matrices (typically $80,000 	imes 60,000	ext{ pixels}$ at 40x optical magnification). Direct end-to-end convolutional training on raw slides is computationally infeasible.
+Whole Slide Images (WSI) in Aperio `.svs` format contain gigapixel tissue matrices (typically $80,000 \times 60,000\text{ pixels}$ at 40x optical magnification). Direct end-to-end convolutional training on raw slides is computationally infeasible.
 
 ```mermaid
 flowchart TD
@@ -320,16 +320,16 @@ flowchart TD
 ```
 
 #### Step 1: Otsu Foreground-Background Segmentation
-The macro thumbnail image is converted to HSV space. Tissue exhibits higher Saturation ($S$) than transparent glass slides. The threshold $	au^*$ maximizes inter-class variance:
+The macro thumbnail image is converted to HSV space. Tissue exhibits higher Saturation ($S$) than transparent glass slides. The threshold $\tau^*$ maximizes inter-class variance:
 
-$$\sigma_B^2(	au) = \omega_0(	au)\omega_1(	au)\left[\mu_0(	au) - \mu_1(	au)ight]^2$$
+$$\sigma_B^2(\tau) = \omega_0(\tau)\omega_1(\tau)\left[\mu_0(\tau) - \mu_1(\tau)\right]^2$$
 
 Generating a binary mask $M(x, y) \in \{0, 1\}$.
 
 #### Step 2: Optical Quality Control & Cellularity Filtering
-Candidate tiles $P_k$ ($256 	imes 256	ext{ pixels}$) are extracted at 20x magnification. A tile is retained if and only if:
+Candidate tiles $P_k$ ($256 \times 256\text{ pixels}$) are extracted at 20x magnification. A tile is retained if and only if:
 
-$$rac{1}{256^2} \sum_{(x,y) \in P_k} M(x, y) \ge 0.40 \quad 	ext{and} \quad 	ext{std}(P_k) \ge 10.0$$
+$$\frac{1}{256^2} \sum_{(x,y) \in P_k} M(x, y) \ge 0.40 \quad \text{and} \quad \text{std}(P_k) \ge 10.0$$
 
 #### Step 3: ResNet-50 Feature Bag Generation
 Each valid tile is forwarded through frozen **ResNet-50** weights, yielding a bag of $N$ embedding vectors:
@@ -363,7 +363,7 @@ flowchart TD
 #### Step 1: Population Variance Ranking
 For each gene $j$, unbiased sample variance is computed across the cohort ($N = 882$):
 
-$$s_j^2 = rac{1}{N - 1} \sum_{i=1}^{N} (x_{ij} - ar{x}_j)^2$$
+$$s_j^2 = \frac{1}{N - 1} \sum_{i=1}^{N} (x_{ij} - \bar{x}_j)^2$$
 
 #### Step 2: Informative Biomarker Selection (Top 500 Genes)
 Selecting the top 500 genes ($K = 500$) captures biological variance in breast cancer oncogenesis while excluding non-informative housekeeping genes (*ACTB*, *GAPDH*, *B2M*).
@@ -371,7 +371,7 @@ Selecting the top 500 genes ($K = 500$) captures biological variance in breast c
 #### Step 3: StandardScaler Z-Score Transformation
 Empirical experiments showed that Z-score standardization on linear counts maintains proportional relative expression across samples:
 
-$$z_{ij} = rac{x_{ij} - \mu_j}{\sigma_j}, \quad \mathbf{x}_{	ext{gen}} \in \mathbb{R}^{500}$$
+$$z_{ij} = \frac{x_{ij} - \mu_j}{\sigma_j}, \quad \mathbf{x}_{\text{gen}} \in \mathbb{R}^{500}$$
 
 <div align="center">
   <b>Figure 5.3: Transcriptomic Preprocessing: Variance Ranking and Z-Score Clustered Heatmap</b><br>
@@ -385,18 +385,18 @@ $$z_{ij} = rac{x_{ij} - \mu_j}{\sigma_j}, \quad \mathbf{x}_{	ext{gen}} \in \mat
 #### Paradigm 1: Naive Deep MIL (NB 04)
 Aggregates patch embeddings via static symmetric pooling:
 
-$$\mathbf{v}_{	ext{mean}} = rac{1}{N} \sum_{i=1}^N \mathbf{h}_i, \quad \mathbf{v}_{	ext{max}} = \max_{i=1}^N (\mathbf{h}_i)$$
+$$\mathbf{v}_{\text{mean}} = \frac{1}{N} \sum_{i=1}^N \mathbf{h}_i, \quad \mathbf{v}_{\text{max}} = \max_{i=1}^N (\mathbf{h}_i)$$
 
 *Result:* Mean-pooling dilutes focal malignant signals across stroma, while max-pooling ignores surrounding tissue architecture.
 
 #### Paradigm 2: TransMIL (Nyström Multi-Head Attention) (NB 05, 05.1)
 Standard Softmax self-attention exhibits quadratic complexity $\mathcal{O}(N^2)$, which is prohibitive when bags contain $N = 2,000+$ tiles. TransMIL approximates the attention matrix via the **Nyström method**, achieving linear complexity $\mathcal{O}(N)$:
 
-$$\hat{\mathbf{A}} = 	ext{Softmax}\left(rac{\mathbf{Q} 	ilde{\mathbf{K}}^	op}{\sqrt{d}}ight) \left[	ext{Softmax}\left(rac{	ilde{\mathbf{Q}} 	ilde{\mathbf{K}}^	op}{\sqrt{d}}ight)ight]^+ 	ext{Softmax}\left(rac{	ilde{\mathbf{Q}} \mathbf{K}^	op}{\sqrt{d}}ight)$$
+$$\hat{\mathbf{A}} = \text{Softmax}\left(\frac{\mathbf{Q} \tilde{\mathbf{K}}^\top}{\sqrt{d}}\right) \left[\text{Softmax}\left(\frac{\tilde{\mathbf{Q}} \tilde{\mathbf{K}}^\top}{\sqrt{d}}\right)\right]^+ \text{Softmax}\left(\frac{\tilde{\mathbf{Q}} \mathbf{K}^\top}{\sqrt{d}}\right)$$
 
-where $	ilde{\mathbf{Q}}$ and $	ilde{\mathbf{K}}$ represent $m = 256$ landmark tokens. In Notebook 05.1, the 2D positional encoding (PPEG) was ablated to establish strict order-invariance on unstructured tile sets, improving Macro-F1 from 0.3976 to 0.4300. A learnable [CLS] token aggregates slide-level morphology:
+where $\tilde{\mathbf{Q}}$ and $\tilde{\mathbf{K}}$ represent $m = 256$ landmark tokens. In Notebook 05.1, the 2D positional encoding (PPEG) was ablated to establish strict order-invariance on unstructured tile sets, improving Macro-F1 from 0.3976 to 0.4300. A learnable [CLS] token aggregates slide-level morphology:
 
-$$\mathbf{v}_{	ext{img}} = 	ext{TransMIL}(\mathbf{X}) \in \mathbb{R}^{512}$$
+$$\mathbf{v}_{\text{img}} = \text{TransMIL}(\mathbf{X}) \in \mathbb{R}^{512}$$
 
 ---
 
@@ -431,26 +431,26 @@ flowchart LR
 ```
 
 #### Vision Stream Formulation:
-$$\mathbf{v}_{	ext{img}} = 	ext{TransMIL}(\mathbf{X}) \in \mathbb{R}^{512}$$
+$$\mathbf{v}_{\text{img}} = \text{TransMIL}(\mathbf{X}) \in \mathbb{R}^{512}$$
 
 #### Genomics Stream Formulation:
-$$\mathbf{h}_{	ext{gen}}^{(1)} = 	ext{ReLU}\left(	ext{LayerNorm}\left(\mathbf{W}_1 \mathbf{x}_{	ext{gen}} + \mathbf{b}_1ight)ight), \quad \mathbf{W}_1 \in \mathbb{R}^{256 	imes 500}$$
+$$\mathbf{h}_{\text{gen}}^{(1)} = \text{ReLU}\left(\text{LayerNorm}\left(\mathbf{W}_1 \mathbf{x}_{\text{gen}} + \mathbf{b}_1\right)\right), \quad \mathbf{W}_1 \in \mathbb{R}^{256 \times 500}$$
 
-$$\mathbf{v}_{	ext{gen}} = 	ext{ReLU}\left(\mathbf{W}_2 \cdot 	ext{Dropout}_{0.3}\left(\mathbf{h}_{	ext{gen}}^{(1)}ight) + \mathbf{b}_2ight), \quad \mathbf{W}_2 \in \mathbb{R}^{512 	imes 256}$$
+$$\mathbf{v}_{\text{gen}} = \text{ReLU}\left(\mathbf{W}_2 \cdot \text{Dropout}_{0.3}\left(\mathbf{h}_{\text{gen}}^{(1)}\right) + \mathbf{b}_2\right), \quad \mathbf{W}_2 \in \mathbb{R}^{512 \times 256}$$
 
 #### Joint Representation & Classification Head:
-$$\mathbf{v}_{	ext{fusion}} = \left[ \mathbf{v}_{	ext{img}} \,\|\, \mathbf{v}_{	ext{gen}} ight] \in \mathbb{R}^{1024}$$
+$$\mathbf{v}_{\text{fusion}} = \left[ \mathbf{v}_{\text{img}} \,\|\, \mathbf{v}_{\text{gen}} \right] \in \mathbb{R}^{1024}$$
 
-$$\hat{\mathbf{y}} = 	ext{Softmax}\left(\mathbf{W}_4 \cdot 	ext{Dropout}_{0.3}\left(	ext{ReLU}\left(\mathbf{W}_3 \mathbf{v}_{	ext{fusion}} + \mathbf{b}_3ight)ight) + \mathbf{b}_4ight)$$
+$$\hat{\mathbf{y}} = \text{Softmax}\left(\mathbf{W}_4 \cdot \text{Dropout}_{0.3}\left(\text{ReLU}\left(\mathbf{W}_3 \mathbf{v}_{\text{fusion}} + \mathbf{b}_3\right)\right) + \mathbf{b}_4\right)$$
 
 #### Loss Optimization:
 To address class imbalance (Luminal A vs. HER2-enriched), training utilizes class-weighted cross-entropy with label smoothing ($\epsilon = 0.05$):
 
-$$\mathcal{L}_{	ext{CE}} = -\sum_{c=1}^4 w_c \left[ (1 - \epsilon) y_c + rac{\epsilon}{4} ight] \log(\hat{y}_c)$$
+$$\mathcal{L}_{\text{CE}} = -\sum_{c=1}^4 w_c \left[ (1 - \epsilon) y_c + \frac{\epsilon}{4} \right] \log(\hat{y}_c)$$
 
 where class weights are set inversely proportional to training frequencies:
 
-$$w_{	ext{Her2}} = 3.03, \quad w_{	ext{Basal}} = 1.38, \quad w_{	ext{LumB}} = 1.20, \quad w_{	ext{LumA}} = 0.47$$
+$$w_{\text{Her2}} = 3.03, \quad w_{\text{Basal}} = 1.38, \quad w_{\text{LumB}} = 1.20, \quad w_{\text{LumA}} = 0.47$$
 
 ---
 
@@ -458,9 +458,9 @@ $$w_{	ext{Her2}} = 3.03, \quad w_{	ext{Basal}} = 1.38, \quad w_{	ext{LumB}} = 1.
 
 As an alternative to attention-based aggregation, Notebook 06.6 explores sequential modeling of WSI tile sequences using a **Bidirectional LSTM**:
 
-$$ec{\mathbf{h}}_t = 	ext{LSTM}_{	ext{fwd}}(\mathbf{x}_t, ec{\mathbf{h}}_{t-1}), \quad \overleftarrow{\mathbf{h}}_t = 	ext{LSTM}_{	ext{bwd}}(\mathbf{x}_t, \overleftarrow{\mathbf{h}}_{t+1})$$
+$$\vec{\mathbf{h}}_t = \text{LSTM}_{\text{fwd}}(\mathbf{x}_t, \vec{\mathbf{h}}_{t-1}), \quad \overleftarrow{\mathbf{h}}_t = \text{LSTM}_{\text{bwd}}(\mathbf{x}_t, \overleftarrow{\mathbf{h}}_{t+1})$$
 
-$$\mathbf{v}_{	ext{seq}} = \left[ ec{\mathbf{h}}_N \,\|\, \overleftarrow{\mathbf{h}}_1 ight] \in \mathbb{R}^{512}$$
+$$\mathbf{v}_{\text{seq}} = \left[ \vec{\mathbf{h}}_N \,\|\, \overleftarrow{\mathbf{h}}_1 \right] \in \mathbb{R}^{512}$$
 
 Coupled with the Genomics MLP via Late Fusion, this model achieved **Accuracy 86.17% ± 3.80%**, **Macro-F1 85.39% ± 4.30%**, and **Mean ROC-AUC 0.9646 ± 0.018**.
 
@@ -500,7 +500,7 @@ An objective analysis of Table 6.1 reveals an important technical comparison:
 
 - **Classification Metrics:** Traditional XGBoost on early-concatenated features (Model 3: WSI 256D + 500 genes) attained **Accuracy 87.53%** and **Macro-F1 85.88%**, slightly higher than the Deep Late Fusion neural network (Model 8: **Accuracy 86.51%**, **Macro-F1 85.56%**).
 - **Why Deep Late Fusion Was Adopted as the Core Architecture:**
-  1. **Continuous Latent Representation for Downstream Survival Analysis:** The deep late fusion network outputs a continuous, joint 1024-dimensional embedding vector $\mathbf{v}_{	ext{fusion}}$. This continuous representation was reduced via PCA-16 to train the regularized Cox Proportional Hazards model (NB 07), achieving **C-Index = 0.7667 ($p < 0.0001$)**. Tree-based XGBoost models partition feature space into discrete step-functions, which cannot produce continuous latent patient embeddings for survival regression.
+  1. **Continuous Latent Representation for Downstream Survival Analysis:** The deep late fusion network outputs a continuous, joint 1024-dimensional embedding vector $\mathbf{v}_{\text{fusion}}$. This continuous representation was reduced via PCA-16 to train the regularized Cox Proportional Hazards model (NB 07), achieving **C-Index = 0.7667 ($p < 0.0001$)**. Tree-based XGBoost models partition feature space into discrete step-functions, which cannot produce continuous latent patient embeddings for survival regression.
   2. **Differentiability for Axiomatic Explainable AI (XAI):** The deep network is fully differentiable, enabling path-integrated gradient computation (Integrated Gradients) directly from subtype logits back through both the 500 RNA-Seq features and the WSI attention weights. Tree-based models cannot compute continuous path-integrated gradients across multimodal inputs.
   3. **Adaptive Spatial Patch Attention:** TransMIL dynamically assigns attention weights to diagnostic epithelial tiles while down-weighting non-neoplastic stroma, whereas PCA-compressed static vectors treat all tiles uniformly.
 
@@ -563,7 +563,7 @@ flowchart TD
 
 Fitting a semi-parametric Cox proportional hazards model on 1024 continuous features across 882 samples induces over-parameterization. Principal Component Analysis (PCA) reduced the 1024D embedding to $d = 16$ orthogonal components:
 
-$$\mathbf{z} = \mathbf{U}_{16}^	op (\mathbf{v}_{	ext{fusion}} - oldsymbol{\mu}_{	ext{fusion}}) \in \mathbb{R}^{16}$$
+$$\mathbf{z} = \mathbf{U}_{16}^\top (\mathbf{v}_{\text{fusion}} - \boldsymbol{\mu}_{\text{fusion}}) \in \mathbb{R}^{16}$$
 
 retaining **88.2% of total cumulative variance**.
 
@@ -571,7 +571,7 @@ retaining **88.2% of total cumulative variance**.
 
 The hazard function for patient $i$ with deep covariates $\mathbf{z}_i$ at follow-up time $t$ is parameterized as:
 
-$$h(t \mid \mathbf{z}_i) = h_0(t) \exp\left(oldsymbol{eta}^	op \mathbf{z}_iight), \quad oldsymbol{eta} \in \mathbb{R}^{16}$$
+$$h(t \mid \mathbf{z}_i) = h_0(t) \exp\left(\boldsymbol{\beta}^\top \mathbf{z}_i\right), \quad \boldsymbol{\beta} \in \mathbb{R}^{16}$$
 
 Trained on follow-up duration (`OS_MONTHS`) and vital event status (`OS_STATUS`), the model achieved a **Concordance Index (C-Index) of 0.7667**.
 
@@ -582,7 +582,7 @@ Trained on follow-up duration (`OS_MONTHS`) and vital event status (`OS_STATUS`)
 
 ### 7.3. 3-Tier Clinical Risk Stratification & Kaplan-Meier Validation (p < 0.0001)
 
-Conditioned on the linear predictor $\eta_i = oldsymbol{eta}^	op \mathbf{z}_i$, patients were stratified into three prognostic tiers:
+Conditioned on the linear predictor $\eta_i = \boldsymbol{\beta}^\top \mathbf{z}_i$, patients were stratified into three prognostic tiers:
 - **Low Risk ($\eta < 0.90$):** 5-year survival probability $> 88\%$.
 - **Moderate / Borderline Risk ($0.90 \le \eta \le 1.15$):** 5-year survival probability $70\% - 85\%$.
 - **High Risk ($\eta > 1.15$):** 5-year survival probability $< 65\%$.
@@ -600,7 +600,7 @@ Kaplan-Meier survival curves showed clear separation between strata with a **Log
 
 ### 7.4. BiLSTM 5-Year Survival Risk Prediction (NB 07.1)
 
-In Notebook 07.1, an end-to-end **BiLSTM Survival Network** was trained to classify 5-year binary mortality risk ($60	ext{ months}$) directly from sequential WSI tile bags across 809 patients with verified follow-up records:
+In Notebook 07.1, an end-to-end **BiLSTM Survival Network** was trained to classify 5-year binary mortality risk ($60\text{ months}$) directly from sequential WSI tile bags across 809 patients with verified follow-up records:
 - **5-Fold Cross-Validation:** Accuracy **72.31% ± 2.30%**, ROC-AUC **0.6827 ± 6.20%**, Macro-F1 **0.6199 ± 3.40%**, C-Index **0.3999 ± 3.50%**.
 - Provides a direct deep learning binary risk classification complementary to the semi-parametric CoxPH framework.
 
@@ -643,13 +643,13 @@ flowchart TD
 
 Slide-level spatial importance is computed via cosine similarity between the TransMIL [CLS] token embedding and each patch vector $\mathbf{h}_i$:
 
-$$lpha_i = rac{\mathbf{v}_{	ext{img}}^	op \mathbf{h}_i}{\|\mathbf{v}_{	ext{img}}\| \|\mathbf{h}_i\|}, \quad 	ext{normalized to } [0, 1]$$
+$$\alpha_i = \frac{\mathbf{v}_{\text{img}}^\top \mathbf{h}_i}{\|\mathbf{v}_{\text{img}}\| \|\mathbf{h}_i\|}, \quad \text{normalized to } [0, 1]$$
 
 Each tile in the reconstructed tissue mosaic is framed with an **attention-coded border**:
-- **Red Border ($lpha \ge 0.75$):** Core invasive neoplastic epithelial nests, high nuclear atypia.
-- **Orange Border ($0.50 \le lpha < 0.75$):** Infiltrating margins and ductal carcinoma in situ (DCIS).
-- **Yellow Border ($0.25 \le lpha < 0.50$):** Tumor-infiltrating lymphocytes and reactive stroma.
-- **Green Border ($lpha < 0.25$):** Benign adipose and normal lobular architecture.
+- **Red Border ($\alpha \ge 0.75$):** Core invasive neoplastic epithelial nests, high nuclear atypia.
+- **Orange Border ($0.50 \le \alpha < 0.75$):** Infiltrating margins and ductal carcinoma in situ (DCIS).
+- **Yellow Border ($0.25 \le \alpha < 0.50$):** Tumor-infiltrating lymphocytes and reactive stroma.
+- **Green Border ($\alpha < 0.25$):** Benign adipose and normal lobular architecture.
 
 <div align="center">
   <b>Figure 8.1: Authentic Tissue Mosaic with Color-Coded Attention Borders and High-Attention Malignant Patch Extraction</b><br>
@@ -667,7 +667,7 @@ Each tile in the reconstructed tissue mosaic is framed with an **attention-coded
 
 Path-integrated gradients are computed using the Captum library across the 500 gene features relative to the predicted PAM50 logit $F_c(\mathbf{x})$:
 
-$$	ext{Attr}_j(\mathbf{x}) pprox (x_j - x'_j) 	imes rac{1}{20} \sum_{k=1}^{20} rac{\partial F_c\left(\mathbf{x}' + rac{k}{20}(\mathbf{x} - \mathbf{x}')ight)}{\partial x_j}$$
+$$\text{Attr}_j(\mathbf{x}) \approx (x_j - x'_j) \times \frac{1}{20} \sum_{k=1}^{20} \frac{\partial F_c\left(\mathbf{x}' + \frac{k}{20}(\mathbf{x} - \mathbf{x}')\right)}{\partial x_j}$$
 
 - **Red Bars (Positive Attribution):** Genes supporting the predicted subtype (e.g., *ESR1*, *PGR* for Luminal A; *ERBB2* for HER2-enriched).
 - **Blue Bars (Negative Attribution):** Genes providing counter-evidence against alternative subtypes.
