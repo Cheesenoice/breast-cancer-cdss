@@ -2,6 +2,7 @@
 
 <div align="center">
 
+[![Full Technical Report](https://img.shields.io/badge/📄%20Full%20Thesis%20Report-DOCX%20(Google%20Docs)-1a73e8?style=for-the-badge&logo=googledocs&logoColor=white)](https://docs.google.com/document/d/11oExKWx3Vr-UYopO9KNAoMn5HCoB9UeD/edit?usp=sharing&ouid=113015507222254663973&rtpof=true&sd=true)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.1%2B-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.31%2B-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
@@ -13,9 +14,15 @@
 
 **An End-to-End Multimodal Artificial Intelligence Clinical Decision Support System (CDSS) Integrating Gigapixel Histopathology Whole Slide Images (WSI), 20,518-Gene RNA-Seq Transcriptomics, and Clinical Phenotypes.**
 
-[Key Highlights](#executive-summary) • [System Architecture](#2-system-architecture--end-to-end-pipeline) • [22 Notebooks Trajectory](#4-the-22-notebook-experimental-trajectory) • [Mathematical Formulations](#5-algorithmic-formulations--deep-architecture-blueprints) • [Benchmarks](#6-benchmark-results--quantitative-evaluation) • [Survival Modeling](#7-long-term-survival-prognosis--deep-time-to-event-modeling) • [Dual XAI](#8-dual-domain-explainable-ai-xai-framework) • [Web CDSS](#9-production-clinical-decision-support-system-cdss-web-application) • [Quick Start](#11-quick-start--deployment-guide)
+[📄 **Read Full Thesis Report (.docx)**](https://docs.google.com/document/d/11oExKWx3Vr-UYopO9KNAoMn5HCoB9UeD/edit?usp=sharing&ouid=113015507222254663973&rtpof=true&sd=true) • [Key Highlights](#executive-summary) • [System Architecture](#2-system-architecture--end-to-end-pipeline) • [22 Notebooks Trajectory](#4-the-22-notebook-experimental-trajectory) • [Mathematical Formulations](#5-algorithmic-formulations--deep-architecture-blueprints) • [Benchmarks](#6-benchmark-results--quantitative-evaluation) • [Survival Modeling](#7-long-term-survival-prognosis--deep-time-to-event-modeling) • [Dual XAI](#8-dual-domain-explainable-ai-xai-framework) • [Web CDSS](#9-production-clinical-decision-support-system-cdss-web-application) • [Quick Start](#11-quick-start--deployment-guide)
 
 </div>
+
+> [!IMPORTANT]
+> ### 📖 Full Academic Graduation Thesis & Technical Report (`report.docx`)
+> The complete academic graduation thesis report (**Báo Cáo Đồ Án Tốt Nghiệp / Comprehensive Technical Report** — comprising all 7 chapters, ~10,000 academic words, 37 publication-grade figures, and 27 empirical validation tables) is accessible online:
+> 
+> 👉 **[Click here to view/download the full `report.docx` on Google Docs](https://docs.google.com/document/d/11oExKWx3Vr-UYopO9KNAoMn5HCoB9UeD/edit?usp=sharing&ouid=113015507222254663973&rtpof=true&sd=true)**
 
 ---
 
